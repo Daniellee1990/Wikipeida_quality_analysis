@@ -73,7 +73,8 @@ for parag in paragraphs:
         temp = parag.split("\n")
         cur_title = temp[-1]
         body_start = True
-        
+
+f = open('/Users/lixiaodan/Desktop/wikipedia_project/dataset/AA.txt')        
 ### process the paragraphs and transform them into lines        
 for line in f:
     if line == '\n':
