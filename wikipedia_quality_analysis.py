@@ -56,9 +56,7 @@ body = list()
 titles = list()
 flag = False
 
-###### compute the number of paragraphs ######################
-
-#############################################################
+#### Get the paragraph related features such as average paragraph length, paragraph numbers##
 ### compute the average length of paragraphs in sentences ###
 paragraphs = f.read().split("\n\n")
 title2paraNums = dict()
@@ -66,36 +64,55 @@ title2paraLen = dict()
 para_num = 0
 total_para_len = 0
 cur_title = ''
+last_title = ''
 para_sizes = 0
 body_start = False
+# preprocess the paragraph
+for index, parag in enumerate(paragraphs):
+    if '</doc>' in parag and '<doc' in parag:
+        temp = parag.split('\n')
+        newParag = list()
+        for sent in temp:
+            if sent == '':
+                continue
+            newParag.append(sent)
+        paragraphs[index] = newParag[0]
+        for i in range(1, 3):
+            paragraphs.insert(index + i, newParag[i])
+            
+processed_parags = list()
 for parag in paragraphs:
+    if parag == '':
+        continue
+    processed_parags.append(parag)
+
+first_line_in_body = False        
+for parag in processed_parags:
+    # if it is the start of body
+    if '<doc' in parag:
+        body_start = True
+        first_line_in_body = True
+        continue
+    # if it is the end of body
     if '</doc>' in parag:
         body_start = False
-        #if para_num == 0:
-         #   continue
-        #print(cur_title)
-        #print(total_para_len)
-        #print(para_num)
-        #print(float(total_para_len) / para_num)
-        #print(parag)
         title2paraNums[cur_title] = para_num
-        #if para_num == 0:
-         #   para_num = 1
-        #title2paraLen[cur_title] = float(total_para_len) / para_num
-        #total_para_len = 0
+        title2paraLen[cur_title] = float(total_para_len) / para_num
+        total_para_len = 0
         para_num = 0
-    if body_start == True and parag != "":
+        continue
+    if first_line_in_body == True:
+        cur_title = parag
+        first_line_in_body = False 
+    # if the paragraph is in the body
+    if body_start == True and parag != "" and '<doc' not in parag and '</doc>' not in parag:
         para_num = para_num + 1
-        #temp_para = parag
-        #sentences = temp_para.split("\.")
-        #print(len(sentences))
-        #total_para_len = total_para_len + len(sentences)
-    if '<doc' in parag:
-        temp = parag.split("\n")
-        cur_title = temp[-1]
-        body_start = True
+        temp_para = parag
+        sent_tokenize = nltk.data.load('tokenizers/punkt/english.pickle')
+        sentences = sent_tokenize.tokenize(temp_para)
+        total_para_len = total_para_len + len(sentences)
 
-"""
+##### Compute other features.
 f = open('/Users/lixiaodan/Desktop/wikipedia_project/dataset/AA.txt')        
 ### process the paragraphs and transform them into lines        
 for line in f:
@@ -137,9 +154,11 @@ average_sent_lens = list()
 max_sent_lengths = list()
 min_sent_lengths = list()
 syllables_sums = list()
+question_rates = list()
+question_nums = list()
 
 #bodies = bodies[:1]
-#### get the content features
+#### get the text statistics
 for body in bodies:
     chars_number = 0  
     bodystr = ""
@@ -186,6 +205,16 @@ for body in bodies:
     # split body into sentences
     sent_tokenize = nltk.data.load('tokenizers/punkt/english.pickle')
     sentences = sent_tokenize.tokenize(bodystr)
+    question_sent_number = 0
+    # find the number of question sentences
+    for sentence in sentences:
+        if '?' in sentence:
+            question_pos = sentence.find('?')
+            # if "?" is not at end of sentence, do not count it.
+            if question_pos != len(sentence) - 1:
+                continue
+            question_sent_number = question_sent_number + 1
+    
     sum_len = 0
     sent_num = len(sentences)
     max_length = 0
@@ -207,17 +236,19 @@ for body in bodies:
     average_sent_len = float(sum_len) / sent_num
     large_sent_rate = float(large_sent_number) / sent_num
     short_sent_rate = float(short_sent_number) / sent_num
+    question_rate = float(question_sent_number) / sent_num
     max_sent_lengths.append(max_length)
     min_sent_lengths.append(min_length)
     large_sent_rates.append(large_sent_rate)
     short_sent_rates.append(short_sent_rate)
     average_sent_lens.append(average_sent_len)
+    question_rates.append(question_rate)
+    question_nums.append(question_sent_number)
     #print('Max sentence length is ' + str(max_length))
     #print('Min sentence length is ' + str(min_length))
     #print('large sentence rate is ' + str(large_sent_rate))
     #print('short sentence rate is ' + str(short_sent_rate))
-    #print('Average sentence length is ' + str(average_sent_len))  
-"""
+    #print('Average sentence length is ' + str(average_sent_len)) 
      
         
         
