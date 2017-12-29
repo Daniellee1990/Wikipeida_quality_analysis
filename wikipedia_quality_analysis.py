@@ -9,6 +9,7 @@ import pandas as pd
 import re
 from collections import Counter
 import nltk
+from nltk import word_tokenize,Text,pos_tag
 
 ### https://stackoverflow.com/questions/405161/detecting-syllables-in-a-word
 def countSyllables(word):
@@ -37,6 +38,48 @@ def countSyllables(word):
     if numVowels == 0:
         numVowels = 1
     return numVowels
+
+def hasAuxiliaryVerb(sent):
+    tokens = word_tokenize(sentence)
+    text = Text(tokens)
+    tags = pos_tag(text)
+    be_set = {"is ", "is not ", "isn't ",
+              "has been ", "has not been ", "hasn't ",
+              "have been ", "have not been ", "haven't ",
+              "are ", "are not ", "aren't ",
+              "was ", "was not ", "wasn't ",
+              "were ", "were not ", "weren't ",
+              "be"}
+    do_set = {"do ", "do not ", "don't ",
+              "did ", "did not ", "didn't ",
+              "does ", "does not ", "doesn't "
+              }
+    
+    for index, token in enumerate(tokens):
+        if token in be_set:
+            if index != len(tokens) - 1 and tags[index + 1][1] == 'VBN':
+                return True
+            if index != len(tokens) - 1 and tags[index + 1][1] == 'VBG':
+                return True
+        if token in do_set:
+            if index != len(tokens) - 1 and tags[index + 1][1] == 'VB':
+                return True
+            if index != len(tokens) - 2 and tags[index + 2][1] == 'VB':
+                return True
+    for tag in tags:
+        if tag[0] == 'MD':
+            return True
+    return False
+    
+def getConjunctionCount(sentence):
+    conjunction_number = 0
+    tokens = word_tokenize(sentence)
+    text = Text(tokens)
+    tags = pos_tag(text)  
+    for tag in tags:
+        if tag[1] == "CC" or tag[1] == "IN":
+            conjunction_number = conjunction_number + 1
+    return conjunction_number
 
 data_FA = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/Featured_articles.csv', encoding='latin-1')
 data_GA = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/Good_articles.csv')
@@ -139,7 +182,6 @@ for cont in bodies:
     else:
         labels.append(0)
 
-#### find the FA and add its documents to texts
 chars_numbers = list()
 average_word_lengths = list()
 complex_word_rates = list()
@@ -156,19 +198,24 @@ min_sent_lengths = list()
 syllables_sums = list()
 question_rates = list()
 question_nums = list()
+Article_sentence_rates = list()
+Auxiliary_verb_rates = list()
+Conjunction_rates = list()
 
 #bodies = bodies[:1]
-#### get the text statistics
 for body in bodies:
     chars_number = 0  
     bodystr = ""
     for paragraph in body:
         bodystr = bodystr + paragraph 
+        
+    #### get the text statistics
     # get word related features
     # get character count
     temps = re.split('\,|\.|\ |\n|\:|\;',bodystr)
     chars = [c for c in temps if c.isalpha()]
     counts = Counter(chars)
+    words_count = len(chars)
     syllables_num = 0
     syllables_sum = 0
     complex_word_number = 0
@@ -184,7 +231,6 @@ for body in bodies:
             one_syllable_word_cnt = one_syllable_word_cnt + 1
         if syllables_num >= 3:
             complex_word_number = complex_word_number + 1
-    words_count = len(chars)
     average_word_length = float(chars_number) / words_count
     long_word_rate = float(long_word_number) / words_count
     one_syllable_word_rate = float(one_syllable_word_cnt) / words_count
@@ -206,14 +252,28 @@ for body in bodies:
     sent_tokenize = nltk.data.load('tokenizers/punkt/english.pickle')
     sentences = sent_tokenize.tokenize(bodystr)
     question_sent_number = 0
-    # find the number of question sentences
+    sentence_number_with_article = 0
+    sentence_with_auxiliary_verb = 0
+    conjunction_number = 0
+    
     for sentence in sentences:
+    # find the number of question sentences    
         if '?' in sentence:
             question_pos = sentence.find('?')
             # if "?" is not at end of sentence, do not count it.
             if question_pos != len(sentence) - 1:
                 continue
             question_sent_number = question_sent_number + 1
+    # find the number of sentences starting with article         
+        if sentence.startswith('A ') or sentence.startswith('An ') or sentence.startswith('The '):
+            sentence_number_with_article = sentence_number_with_article + 1
+    # find the number of Auxiliary Verbs
+        if hasAuxiliaryVerb(sentence) == True:
+            sentence_with_auxiliary_verb = sentence_with_auxiliary_verb + 1
+    # find conjunction rate
+        current_conj_number = getConjunctionCount(sentence)
+        conjunction_number = conjunction_number + current_conj_number
+    
     
     sum_len = 0
     sent_num = len(sentences)
@@ -233,10 +293,15 @@ for body in bodies:
             large_sent_number = large_sent_number + 1
         if sent_len <= 15:
             short_sent_number = short_sent_number + 1
+    
     average_sent_len = float(sum_len) / sent_num
     large_sent_rate = float(large_sent_number) / sent_num
     short_sent_rate = float(short_sent_number) / sent_num
     question_rate = float(question_sent_number) / sent_num
+    Article_sentence_rate = float(sentence_number_with_article) / sent_num
+    Auxiliary_verb_rate = float(sentence_with_auxiliary_verb) / sent_num
+    Conjunction_rate = float(conjunction_number) / words_count
+    
     max_sent_lengths.append(max_length)
     min_sent_lengths.append(min_length)
     large_sent_rates.append(large_sent_rate)
@@ -244,11 +309,20 @@ for body in bodies:
     average_sent_lens.append(average_sent_len)
     question_rates.append(question_rate)
     question_nums.append(question_sent_number)
+    Article_sentence_rates.append(Article_sentence_rate)
+    Auxiliary_verb_rates.append(Auxiliary_verb_rate)
+    Conjunction_rates.append(Conjunction_rate)
     #print('Max sentence length is ' + str(max_length))
     #print('Min sentence length is ' + str(min_length))
     #print('large sentence rate is ' + str(large_sent_rate))
     #print('short sentence rate is ' + str(short_sent_rate))
     #print('Average sentence length is ' + str(average_sent_len)) 
+
+## get part of speech features
+## Article sentence rate
+    
+    
+    
      
         
         
