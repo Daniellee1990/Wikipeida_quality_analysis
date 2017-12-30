@@ -10,6 +10,8 @@ import re
 from collections import Counter
 import nltk
 from nltk import word_tokenize,Text,pos_tag
+from nltk.stem import PorterStemmer
+from nltk.stem import SnowballStemmer
 
 ### https://stackoverflow.com/questions/405161/detecting-syllables-in-a-word
 def countSyllables(word):
@@ -80,6 +82,38 @@ def getConjunctionCount(sentence):
         if tag[1] == "CC" or tag[1] == "IN":
             conjunction_number = conjunction_number + 1
     return conjunction_number
+
+def SentenceBeginWithConj(sentence):
+    tokens = word_tokenize(sentence)
+    text = Text(tokens)
+    tags = pos_tag(text)
+    if tags[0][1] == "CC" or tags[0][1] == "IN":
+        return True
+    return False
+
+def SentenceBeginWithInterrogativePronoun(sentence):
+    tokens = word_tokenize(sentence)
+    #text = Text(tokens)
+    interrogative_pronoun = {'What', 'Which', 'Who', 'Whom', 
+                             'Whose', 'Whatever', 'Whatsoever',
+                             'Whichever','Whoever','Whosoever', 
+                             'Whomever', 'Whomsoever', 'Whosever'}
+    if tokens[0] in interrogative_pronoun:
+        return True
+    return False
+
+def isWordNominalization(word):
+    if len(word) <= 4:
+        return False
+    suffix = word[-4:]
+    nominalization_suffix = {'tion', 'ment', 'ence', 'ance'}
+    snow = SnowballStemmer('english') 
+    stem = snow.stem(word)
+    # check whether it is suffix. For example, 'ance' in France is not suffix. 
+    if suffix in nominalization_suffix and len(word) - len(stem) >= 3:
+        return True
+    return False
+    
 
 data_FA = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/Featured_articles.csv', encoding='latin-1')
 data_GA = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/Good_articles.csv')
@@ -201,6 +235,9 @@ question_nums = list()
 Article_sentence_rates = list()
 Auxiliary_verb_rates = list()
 Conjunction_rates = list()
+Conjunction_sent_rates = list()
+Interrogative_pronoun_sent_rates = list()
+nominalization_word_rates = list()
 
 #bodies = bodies[:1]
 for body in bodies:
@@ -221,6 +258,7 @@ for body in bodies:
     complex_word_number = 0
     long_word_number = 0
     one_syllable_word_cnt = 0
+    number_nominalization_word = 0
     for char in chars:
         chars_number = chars_number + len(char)
         if len(char) >= 6:
@@ -231,11 +269,17 @@ for body in bodies:
             one_syllable_word_cnt = one_syllable_word_cnt + 1
         if syllables_num >= 3:
             complex_word_number = complex_word_number + 1
+        if isWordNominalization(char) == True:
+            number_nominalization_word = number_nominalization_word + 1 
+            #print(char)
+            
+            
     average_word_length = float(chars_number) / words_count
     long_word_rate = float(long_word_number) / words_count
     one_syllable_word_rate = float(one_syllable_word_cnt) / words_count
     average_syllable_num = float(syllables_sum) / words_count
     complex_word_rate = float(complex_word_number) / words_count
+    nominalization_word_rate = float(number_nominalization_word) / words_count
     # add character count into features
     chars_numbers.append(chars_number)
     # add average word length into features
@@ -246,6 +290,7 @@ for body in bodies:
     long_word_rates.append(long_word_rate)
     one_syllable_word_rates.append(one_syllable_word_rate)
     average_syllable_nums.append(average_syllable_num)
+    nominalization_word_rates.append(nominalization_word_rate)
     
     # get sentences related features.
     # split body into sentences
@@ -255,6 +300,7 @@ for body in bodies:
     sentence_number_with_article = 0
     sentence_with_auxiliary_verb = 0
     conjunction_number = 0
+    number_sent_begin_with_InterrogativePronoun = 0
     
     for sentence in sentences:
     # find the number of question sentences    
@@ -274,7 +320,6 @@ for body in bodies:
         current_conj_number = getConjunctionCount(sentence)
         conjunction_number = conjunction_number + current_conj_number
     
-    
     sum_len = 0
     sent_num = len(sentences)
     max_length = 0
@@ -282,6 +327,7 @@ for body in bodies:
     large_sent_number = 0
     short_sent_number = 0
     average_sent_len = 0
+    number_sent_begin_with_conjuction = 0
     for sentence in sentences:
         sent_len = len(sentence)
         sum_len = sum_len + sent_len
@@ -293,6 +339,13 @@ for body in bodies:
             large_sent_number = large_sent_number + 1
         if sent_len <= 15:
             short_sent_number = short_sent_number + 1
+        if True == SentenceBeginWithConj(sentence):
+            number_sent_begin_with_conjuction = number_sent_begin_with_conjuction + 1
+            #print(sentence)
+        if True == SentenceBeginWithInterrogativePronoun(sentence):
+            number_sent_begin_with_InterrogativePronoun = number_sent_begin_with_InterrogativePronoun + 1
+            #print(sentence)
+            
     
     average_sent_len = float(sum_len) / sent_num
     large_sent_rate = float(large_sent_number) / sent_num
@@ -301,6 +354,8 @@ for body in bodies:
     Article_sentence_rate = float(sentence_number_with_article) / sent_num
     Auxiliary_verb_rate = float(sentence_with_auxiliary_verb) / sent_num
     Conjunction_rate = float(conjunction_number) / words_count
+    Conjunction_sent_rate = float(number_sent_begin_with_conjuction) / sent_num
+    Interrogative_pronoun_sent_rate = float(number_sent_begin_with_InterrogativePronoun) / sent_num
     
     max_sent_lengths.append(max_length)
     min_sent_lengths.append(min_length)
@@ -312,6 +367,8 @@ for body in bodies:
     Article_sentence_rates.append(Article_sentence_rate)
     Auxiliary_verb_rates.append(Auxiliary_verb_rate)
     Conjunction_rates.append(Conjunction_rate)
+    Conjunction_sent_rates.append(Conjunction_sent_rate)
+    Interrogative_pronoun_sent_rates.append(Interrogative_pronoun_sent_rate)
     #print('Max sentence length is ' + str(max_length))
     #print('Min sentence length is ' + str(min_length))
     #print('large sentence rate is ' + str(large_sent_rate))
