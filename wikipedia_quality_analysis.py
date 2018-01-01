@@ -10,8 +10,111 @@ import re
 from collections import Counter
 import nltk
 from nltk import word_tokenize,Text,pos_tag
-from nltk.stem import PorterStemmer
 from nltk.stem import SnowballStemmer
+
+be_set = {
+          "is",
+          "been",
+          "are", 
+          "was",
+          "were",
+          "be"
+          }
+
+be_not_set = {
+            "isn't",
+            "aren't",
+            "wasn't",
+            "weren't"
+            }
+
+do_set = {
+          "do", 
+          "did",
+          "does"
+          }
+
+do_not_set = {
+            "don't",
+            "didn't",
+            "doesn't"
+            }
+
+have_set = {
+            "have",
+            "had",
+            "has"
+            }
+
+prepositions_set_one_word = {
+                    "aboard", "about", "above", "after", "against", "alongside", 
+                    "amid", "among", "around", "at", "before", "behind", "below", 
+                    "beneath", "beside", "besides", "between", "beyond", "but", 
+                    "concerning", "considering", "despite", "down", "during", 
+                    "except", "inside", "into", "like", "off",
+                    "onto", "on", "opposite", "out", "outside", "over",
+                    "past", "regarding", "round", "since", 
+                    "together", "with", "throughout", "through", 
+                    "till", "toward", "under", "underneath", "until", "unto", "up", 
+                    "up to", "upon", "with", "within", "without", "across", 
+                    "along", "by", "of", "in", "to", "near", "of", "from"
+                    }
+
+prepositions_set_two_words = {
+                    "according to", "across from", "alongside of", "along with",
+                    "apart from", "aside from", "away from", "back of", "because of", 
+                    "by means of", "down from", "except for", "excepting for", "from among", 
+                    "from between", "from under", "inside of", "instead of", "near to", "out of", 
+                    "outside of", "over to", "owing to", "prior to", "round about", "subsequent to"
+                    }
+
+prepositions_set_three_words = {
+                    "in addition to", "in behalf of", "in spite of",
+                    "in front of", "in place of", "in regard to",
+                    "on account of", "on behalf of", "on top of"
+                    }
+
+subordinate_conjunction_set_one_word = {
+                                "after", "because", "lest", "till", "’til", "although", 
+                                "before", "unless", "as", "provided", "until", "since",
+                                "whenever", "if", "than", "inasmuch", "though", "while"
+                               }
+
+subordinate_conjunction_set_two_word = {
+                                "now that", "even if", "provided that", 
+                                "as if", "even though", "so that"
+                               }
+
+subordinate_conjunction_set_three_word = {
+                                         "as long as", "as much as", 
+                                         "as soon as", "in order that"   
+                                         }       
+
+def isToBeWord(word):
+    if word in be_set or word in be_not_set:
+        return True
+    return False
+    
+def SentenceBeginWithSubConj(sentence):
+    sentence = sentence.lower()
+    tokens = word_tokenize(sentence)
+    if len(tokens) >= 3:
+        first_three = tokens[0] + " " + tokens[1] + " " + tokens[2]
+        if first_three in prepositions_set_three_words:
+            return False
+    if len(tokens) >= 2:
+        first_two = tokens[0] + " " + tokens[1]
+        if first_two in prepositions_set_two_words:
+            return False
+    for three_words in subordinate_conjunction_set_three_word:
+        if sentence.startswith(three_words):
+            return True
+    for two_words in subordinate_conjunction_set_two_word:
+        if sentence.startswith(two_words):
+            return True
+    if tokens[0] in subordinate_conjunction_set_one_word and tokens[0] not in prepositions_set_one_word:
+        return True
+    return False
 
 ### https://stackoverflow.com/questions/405161/detecting-syllables-in-a-word
 def countSyllables(word):
@@ -41,33 +144,55 @@ def countSyllables(word):
         numVowels = 1
     return numVowels
 
-def hasAuxiliaryVerb(sent):
+def hasAuxiliaryVerb(sentence):
     tokens = word_tokenize(sentence)
     text = Text(tokens)
     tags = pos_tag(text)
-    be_set = {"is ", "is not ", "isn't ",
-              "has been ", "has not been ", "hasn't ",
-              "have been ", "have not been ", "haven't ",
-              "are ", "are not ", "aren't ",
-              "was ", "was not ", "wasn't ",
-              "were ", "were not ", "weren't ",
-              "be"}
-    do_set = {"do ", "do not ", "don't ",
-              "did ", "did not ", "didn't ",
-              "does ", "does not ", "doesn't "
-              }
-    
     for index, token in enumerate(tokens):
+        # if sentence has "don't", "doesn't", "didn't", it must have ausiliary verb
+        if token in do_not_set:
+            return True
+        
         if token in be_set:
+            # are done
             if index != len(tokens) - 1 and tags[index + 1][1] == 'VBN':
                 return True
+            # are not done
+            if index != len(tokens) - 2 and tags[index + 2][1] == 'VBN':
+                return True
+            # are doing
             if index != len(tokens) - 1 and tags[index + 1][1] == 'VBG':
                 return True
+            # are not doing
+            if index != len(tokens) - 2 and tags[index + 2][1] == 'VBG':
+                return True
+            
+        if token in be_not_set:
+            # aren't done
+            if index != len(tokens) - 1 and tags[index + 1][1] == 'VBN':
+                return True
+            # aren't doing
+            if index != len(tokens) - 1 and tags[index + 1][1] == 'VBG':
+                return True
+            
         if token in do_set:
             if index != len(tokens) - 1 and tags[index + 1][1] == 'VB':
                 return True
             if index != len(tokens) - 2 and tags[index + 2][1] == 'VB':
                 return True
+            
+        if token in have_set:
+            # have done
+            if index != len(tokens) - 1 and tags[index + 1][1] == 'VBN':
+                # has limited powers XXXXXX
+                if index != len(tokens) - 2 and tags[index + 2][1] == 'NN' or index != len(tokens) - 2 and tags[index + 2][1] == 'NNS':
+                    return False
+                else: 
+                    return True
+            # have not done
+            if index !=len(tokens) - 2 and tags[index + 2][1] == 'VBN':
+                return True
+
     for tag in tags:
         if tag[0] == 'MD':
             return True
@@ -83,6 +208,26 @@ def getConjunctionCount(sentence):
             conjunction_number = conjunction_number + 1
     return conjunction_number
 
+def getPrepositionCount(sentence):
+    preposition_number = 0
+    tokens = word_tokenize(sentence)
+    text = Text(tokens)
+    tags = pos_tag(text)  
+    for tag in tags:
+        if tag[1] == "IN":
+            preposition_number = preposition_number + 1
+    return preposition_number
+
+def getPronounCount(sentence):
+    pronoun_number = 0
+    tokens = word_tokenize(sentence)
+    text = Text(tokens)
+    tags = pos_tag(text)
+    for tag in tags:
+        if tag[1] == "PRP" or tag[1] == "PRP$":
+            pronoun_number = pronoun_number + 1
+    return pronoun_number
+        
 def SentenceBeginWithConj(sentence):
     tokens = word_tokenize(sentence)
     text = Text(tokens)
@@ -91,16 +236,33 @@ def SentenceBeginWithConj(sentence):
         return True
     return False
 
+def SentenceBeginWithPrep(sentence):
+    tokens = word_tokenize(sentence)
+    text = Text(tokens)
+    tags = pos_tag(text)
+    if tags[0][1] == "IN" and tags[0][0].lower() not in subordinate_conjunction_set_one_word:
+        return True
+    return False
+
 def SentenceBeginWithInterrogativePronoun(sentence):
     tokens = word_tokenize(sentence)
-    #text = Text(tokens)
     interrogative_pronoun = {'What', 'Which', 'Who', 'Whom', 
                              'Whose', 'Whatever', 'Whatsoever',
                              'Whichever','Whoever','Whosoever', 
-                             'Whomever', 'Whomsoever', 'Whosever'}
+                             'Whomever', 'Whomsoever', 'Whosever',
+                             'Why', 'where', 'When', 'How'
+                             }
     if tokens[0] in interrogative_pronoun:
         return True
     return False
+
+def SentenceBeginWithPronoun(sentence):
+    tokens = word_tokenize(sentence)
+    text = Text(tokens)
+    tags = pos_tag(text)
+    if tags[0][1] == "PRP" or tags[0][1] == "PRP$":
+        return True
+    return False 
 
 def isWordNominalization(word):
     if len(word) <= 4:
@@ -113,8 +275,31 @@ def isWordNominalization(word):
     if suffix in nominalization_suffix and len(word) - len(stem) >= 3:
         return True
     return False
-    
 
+def SentencePassiveVoice(sentence):
+    tokens = word_tokenize(sentence)
+    text = Text(tokens)
+    tags = pos_tag(text)
+    for index, token in enumerate(tokens):
+        if token in be_set:
+            # are done
+            if index < len(tokens) - 1 and tags[index + 1][1] == 'VBN':
+                return True
+            # are not done
+            if index < len(tokens) - 2 and tags[index + 2][1] == 'VBN':
+                return True
+            # are not properly done
+            if index < len(tokens) - 3 and tags[index + 3][1] == 'VBN':
+                return True
+        if token in be_not_set:
+            # isn't done
+            if index < len(tokens) - 1 and tags[index + 1][1] == 'VBN':
+                return True
+            # isn't properly done
+            if index < len(tokens) - 2 and tags[index + 2][1] == 'VBN':
+                return True
+    return False
+    
 data_FA = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/Featured_articles.csv', encoding='latin-1')
 data_GA = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/Good_articles.csv')
 
@@ -238,8 +423,15 @@ Conjunction_rates = list()
 Conjunction_sent_rates = list()
 Interrogative_pronoun_sent_rates = list()
 nominalization_word_rates = list()
+Passive_voice_sent_rates = list()
+Preposition_rates = list()
+Preposition_sent_rates = list()
+Pronoun_sent_rates = list()
+Pronoun_rates = list()
+SubConj_sent_rates = list()
+to_be_word_rates = list()
 
-#bodies = bodies[:1]
+bodies = bodies[-200:]
 for body in bodies:
     chars_number = 0  
     bodystr = ""
@@ -259,6 +451,7 @@ for body in bodies:
     long_word_number = 0
     one_syllable_word_cnt = 0
     number_nominalization_word = 0
+    number_to_be_word = 0
     for char in chars:
         chars_number = chars_number + len(char)
         if len(char) >= 6:
@@ -270,16 +463,19 @@ for body in bodies:
         if syllables_num >= 3:
             complex_word_number = complex_word_number + 1
         if isWordNominalization(char) == True:
-            number_nominalization_word = number_nominalization_word + 1 
+            number_nominalization_word = number_nominalization_word + 1
+        if isToBeWord(char) == True:
             #print(char)
-            
-            
+            number_to_be_word = number_to_be_word + 1
+        
     average_word_length = float(chars_number) / words_count
     long_word_rate = float(long_word_number) / words_count
     one_syllable_word_rate = float(one_syllable_word_cnt) / words_count
     average_syllable_num = float(syllables_sum) / words_count
     complex_word_rate = float(complex_word_number) / words_count
     nominalization_word_rate = float(number_nominalization_word) / words_count
+    to_be_word_rate = float(number_to_be_word) / words_count
+
     # add character count into features
     chars_numbers.append(chars_number)
     # add average word length into features
@@ -291,6 +487,7 @@ for body in bodies:
     one_syllable_word_rates.append(one_syllable_word_rate)
     average_syllable_nums.append(average_syllable_num)
     nominalization_word_rates.append(nominalization_word_rate)
+    to_be_word_rates.append(to_be_word_rate)
     
     # get sentences related features.
     # split body into sentences
@@ -301,7 +498,8 @@ for body in bodies:
     sentence_with_auxiliary_verb = 0
     conjunction_number = 0
     number_sent_begin_with_InterrogativePronoun = 0
-    
+    preposition_number = 0
+    pronoun_number = 0
     for sentence in sentences:
     # find the number of question sentences    
         if '?' in sentence:
@@ -315,11 +513,15 @@ for body in bodies:
             sentence_number_with_article = sentence_number_with_article + 1
     # find the number of Auxiliary Verbs
         if hasAuxiliaryVerb(sentence) == True:
+            #print(sentence + "\n")
             sentence_with_auxiliary_verb = sentence_with_auxiliary_verb + 1
     # find conjunction rate
         current_conj_number = getConjunctionCount(sentence)
         conjunction_number = conjunction_number + current_conj_number
-    
+    # Get proposition rate
+        preposition_number = preposition_number + getPrepositionCount(sentence)
+    # Get pronoun rate
+        pronoun_number = pronoun_number + getPronounCount(sentence)
     sum_len = 0
     sent_num = len(sentences)
     max_length = 0
@@ -328,6 +530,11 @@ for body in bodies:
     short_sent_number = 0
     average_sent_len = 0
     number_sent_begin_with_conjuction = 0
+    number_passive_voice_sent = 0
+    number_sent_begin_with_preposition = 0
+    number_sent_begin_witn_pronoun = 0
+    number_sent_begin_with_subConj = 0
+    
     for sentence in sentences:
         sent_len = len(sentence)
         sum_len = sum_len + sent_len
@@ -341,12 +548,25 @@ for body in bodies:
             short_sent_number = short_sent_number + 1
         if True == SentenceBeginWithConj(sentence):
             number_sent_begin_with_conjuction = number_sent_begin_with_conjuction + 1
-            #print(sentence)
         if True == SentenceBeginWithInterrogativePronoun(sentence):
             number_sent_begin_with_InterrogativePronoun = number_sent_begin_with_InterrogativePronoun + 1
-            #print(sentence)
-            
-    
+        if True == SentencePassiveVoice(sentence):
+            #print("Passive")
+            #print(sentence + "\n")
+            number_passive_voice_sent = number_passive_voice_sent + 1
+        if True == SentenceBeginWithPrep(sentence):
+            #print("Prep")
+            #print(sentence + "\n")
+            number_sent_begin_with_preposition = number_sent_begin_with_preposition + 1  
+        if True == SentenceBeginWithPronoun(sentence):
+            #print("Pronoun")
+            #print(sentence + "\n")
+            number_sent_begin_witn_pronoun = number_sent_begin_witn_pronoun + 1
+        if True == SentenceBeginWithSubConj(sentence):
+            #print("Sub conj")
+            #print(sentence + "\n")
+            number_sent_begin_with_subConj = number_sent_begin_with_subConj + 1
+
     average_sent_len = float(sum_len) / sent_num
     large_sent_rate = float(large_sent_number) / sent_num
     short_sent_rate = float(short_sent_number) / sent_num
@@ -354,8 +574,14 @@ for body in bodies:
     Article_sentence_rate = float(sentence_number_with_article) / sent_num
     Auxiliary_verb_rate = float(sentence_with_auxiliary_verb) / sent_num
     Conjunction_rate = float(conjunction_number) / words_count
+    Preposition_rate = float( preposition_number ) / words_count
     Conjunction_sent_rate = float(number_sent_begin_with_conjuction) / sent_num
     Interrogative_pronoun_sent_rate = float(number_sent_begin_with_InterrogativePronoun) / sent_num
+    Passive_voice_sent_rate = float(number_passive_voice_sent) / sent_num
+    Preposition_sent_rate = float(number_sent_begin_with_preposition) / sent_num
+    Pronoun_sent_rate = float(number_sent_begin_witn_pronoun) / sent_num
+    SubConj_sent_rate = float(number_sent_begin_with_subConj) / sent_num
+    Pronoun_rate = float(pronoun_number) / words_count
     
     max_sent_lengths.append(max_length)
     min_sent_lengths.append(min_length)
@@ -367,14 +593,21 @@ for body in bodies:
     Article_sentence_rates.append(Article_sentence_rate)
     Auxiliary_verb_rates.append(Auxiliary_verb_rate)
     Conjunction_rates.append(Conjunction_rate)
+    Preposition_rates.append(Preposition_rate)
     Conjunction_sent_rates.append(Conjunction_sent_rate)
     Interrogative_pronoun_sent_rates.append(Interrogative_pronoun_sent_rate)
+    Passive_voice_sent_rates.append(Passive_voice_sent_rate)
+    Preposition_sent_rates.append(Preposition_sent_rate)
+    Pronoun_sent_rates.append(Pronoun_sent_rate)
+    Pronoun_rates.append(Pronoun_rate)
+    SubConj_sent_rates.append(SubConj_sent_rate)
+    
     #print('Max sentence length is ' + str(max_length))
     #print('Min sentence length is ' + str(min_length))
     #print('large sentence rate is ' + str(large_sent_rate))
     #print('short sentence rate is ' + str(short_sent_rate))
     #print('Average sentence length is ' + str(average_sent_len)) 
-
+    
 ## get part of speech features
 ## Article sentence rate
     
