@@ -11,6 +11,7 @@ from collections import Counter
 import nltk
 from nltk import word_tokenize,Text,pos_tag
 from nltk.stem import SnowballStemmer
+import readability_formulas
 
 be_set = {
           "is",
@@ -430,14 +431,27 @@ Pronoun_sent_rates = list()
 Pronoun_rates = list()
 SubConj_sent_rates = list()
 to_be_word_rates = list()
+aris = list() ## automated readability index
+BIs = list() ## Bormuth index
+CLIndexes = list() ## Coleman Liau index
+eduYears = list() ## education years
+GunningFogIndexes = list() ## Gunning fog index
+FlecshReadings = list() ## Flesch reading ease
+FlecshKincaids = list() ## Flesch Kincaids
+LIXes = list() ## Lasbarhedsindex
+MiyazakiEFLs = list() ## Miyazaki EFL readability index
+newDaleChalls = list() ## new dale chall
+smogGradings = list() ## smog grading
 
-bodies = bodies[-200:]
+#bodies = bodies[0:50]
 for body in bodies:
     chars_number = 0  
     bodystr = ""
     for paragraph in body:
         bodystr = bodystr + paragraph 
-        
+    #print(bodystr)
+    #print("\n")
+    
     #### get the text statistics
     # get word related features
     # get character count
@@ -452,8 +466,11 @@ for body in bodies:
     one_syllable_word_cnt = 0
     number_nominalization_word = 0
     number_to_be_word = 0
+    number_difficult_word = 0
     for char in chars:
         chars_number = chars_number + len(char)
+        #print("chars_number")
+        #print(chars_number)
         if len(char) >= 6:
             long_word_number = long_word_number + 1
         syllables_num = countSyllables(char)
@@ -465,8 +482,9 @@ for body in bodies:
         if isWordNominalization(char) == True:
             number_nominalization_word = number_nominalization_word + 1
         if isToBeWord(char) == True:
-            #print(char)
             number_to_be_word = number_to_be_word + 1
+        if readability_formulas.isDifficultWord(char) == True:
+            number_difficult_word = number_difficult_word + 1
         
     average_word_length = float(chars_number) / words_count
     long_word_rate = float(long_word_number) / words_count
@@ -493,6 +511,7 @@ for body in bodies:
     # split body into sentences
     sent_tokenize = nltk.data.load('tokenizers/punkt/english.pickle')
     sentences = sent_tokenize.tokenize(bodystr)
+    
     question_sent_number = 0
     sentence_number_with_article = 0
     sentence_with_auxiliary_verb = 0
@@ -522,6 +541,7 @@ for body in bodies:
         preposition_number = preposition_number + getPrepositionCount(sentence)
     # Get pronoun rate
         pronoun_number = pronoun_number + getPronounCount(sentence)
+        
     sum_len = 0
     sent_num = len(sentences)
     max_length = 0
@@ -534,7 +554,7 @@ for body in bodies:
     number_sent_begin_with_preposition = 0
     number_sent_begin_witn_pronoun = 0
     number_sent_begin_with_subConj = 0
-    
+    """
     for sentence in sentences:
         sent_len = len(sentence)
         sum_len = sum_len + sent_len
@@ -601,15 +621,90 @@ for body in bodies:
     Pronoun_sent_rates.append(Pronoun_sent_rate)
     Pronoun_rates.append(Pronoun_rate)
     SubConj_sent_rates.append(SubConj_sent_rate)
+    """
+    ################### Readability Formulas ##################################
+    # Automated readability index
+    #print(sentences)
+    """
+    print("characters number")
+    print(chars_number)
+    print("\n")
+    print("words count")
+    print(words_count)
+    print("\n")
+    print("sentence number")
+    #sent_num = len(sentences)
+    print(sent_num)
+    print("\n")
+    """
+    ari = readability_formulas.getARI(chars_number, words_count, sent_num)
+    print("Automated readability index")
+    print(ari)
+    aris.append(ari)
+    #print("Difficult word count \n")
+    #print(number_difficult_word)
+    BI = readability_formulas.BormuthIndex(chars_number, words_count, sent_num, number_difficult_word)
+    BIs.append(BI)
+    if BI >= 0:
+        print(BI)
     
-    #print('Max sentence length is ' + str(max_length))
-    #print('Min sentence length is ' + str(min_length))
-    #print('large sentence rate is ' + str(large_sent_rate))
-    #print('short sentence rate is ' + str(short_sent_rate))
-    #print('Average sentence length is ' + str(average_sent_len)) 
+    CLIndex = readability_formulas.getColemanLaurIndex(chars_number, words_count, sent_num)
+    print("Coleman-liau index")
+    print(CLIndex)
+    CLIndexes.append(CLIndex)
     
-## get part of speech features
-## Article sentence rate
+    # forcast readability
+    eduYear = readability_formulas.getEduYears(one_syllable_word_cnt)
+    eduYears.append(eduYear)
+    print("Forcast readability")
+    print(eduYear)
+    
+    # Flesch reading ease
+    FlecshReading = readability_formulas.getFleschReading(words_count, sent_num, one_syllable_word_cnt)
+    FlecshReadings.append(FlecshReading)
+    print("Flesch Reading ease")
+    print(FlecshReading)
+    
+    # Flesch Kincaid
+    FlecshKincaid = readability_formulas.getFleschKincaid(words_count, sent_num, one_syllable_word_cnt)
+    FlecshKincaids.append(FlecshKincaid)
+    print("Flesch Kincaid")
+    print(FlecshKincaid)
+    
+    # Gunning fog index
+    GunningFogIndex = readability_formulas.getGunningFogIndex(words_count, sent_num, complex_word_number)
+    GunningFogIndexes.append(GunningFogIndex)
+    print("Gunning fog index")
+    print(GunningFogIndex)
+    
+    # Lasbarhedsindex
+    LIX = readability_formulas.getLIX(words_count, sent_num, long_word_number)
+    LIXes.append(LIX)
+    print("LIX")
+    print(LIX)
+    
+    # Miyazaki EFL readability index
+    MiyazakiEFL = readability_formulas.getMiyazakiEFL(chars_number, words_count, sent_num)
+    MiyazakiEFLs.append(MiyazakiEFL)
+    print("Miyazaki EFL readability index")
+    print(MiyazakiEFL)
+    
+    # New Dale Chall
+    newDaleChall = readability_formulas.getNewDaleChall(words_count, sent_num, number_difficult_word)
+    newDaleChalls.append(newDaleChall)
+    print("new Dale chall")
+    print(newDaleChall)
+    
+    # Smog grading
+    smogGrading = readability_formulas.getSmogGrading(sent_num, complex_word_number)
+    smogGradings.append(smogGrading)
+    print("Smog grading")
+    print(smogGrading)
+    
+
+    
+    
+
     
     
     
