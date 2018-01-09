@@ -450,14 +450,6 @@ for body in bodies:
     smogGradings.append(smogGrading)
     print("Smog grading")
     print(smogGrading)
-    
-    
-    ##### Extraction of structure features ###
-path = "/Users/lixiaodan/Desktop/wikipedia_project/dataset/enwiki-20180101-pages-articles1.xml"
-file = open(path)
-#contents = f.read()
-for line in file: 
-    print( line )
 
     
     
