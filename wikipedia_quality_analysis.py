@@ -9,10 +9,10 @@ import pandas as pd
 import re
 from collections import Counter
 import nltk
-from nltk import word_tokenize,Text,pos_tag
-from nltk.stem import SnowballStemmer
 import readability_formulas
+import text_stat_pos
 
+"""
 be_set = {
           "is",
           "been",
@@ -300,6 +300,7 @@ def SentencePassiveVoice(sentence):
             if index < len(tokens) - 2 and tags[index + 2][1] == 'VBN':
                 return True
     return False
+"""
     
 data_FA = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/Featured_articles.csv', encoding='latin-1')
 data_GA = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/Good_articles.csv')
@@ -442,6 +443,11 @@ LIXes = list() ## Lasbarhedsindex
 MiyazakiEFLs = list() ## Miyazaki EFL readability index
 newDaleChalls = list() ## new dale chall
 smogGradings = list() ## smog grading
+common_word_rates = list()
+difficult_word_rates = list()
+Peacock_word_rates = list()
+Stop_word_rates = list()
+weasel_word_rates = list()
 
 #bodies = bodies[0:50]
 for body in bodies:
@@ -467,24 +473,40 @@ for body in bodies:
     number_nominalization_word = 0
     number_to_be_word = 0
     number_difficult_word = 0
+    number_peacock_word = 0
+    number_stop_word = 0
+    number_weasel_word = 0
+    
     for char in chars:
         chars_number = chars_number + len(char)
         #print("chars_number")
         #print(chars_number)
         if len(char) >= 6:
             long_word_number = long_word_number + 1
-        syllables_num = countSyllables(char)
+        syllables_num = text_stat_pos.countSyllables(char)
         syllables_sum = syllables_sum + syllables_num
         if syllables_num == 1:
             one_syllable_word_cnt = one_syllable_word_cnt + 1
         if syllables_num >= 3:
             complex_word_number = complex_word_number + 1
-        if isWordNominalization(char) == True:
+        if text_stat_pos.isWordNominalization(char) == True:
             number_nominalization_word = number_nominalization_word + 1
-        if isToBeWord(char) == True:
+        if text_stat_pos.isToBeWord(char) == True:
             number_to_be_word = number_to_be_word + 1
         if readability_formulas.isDifficultWord(char) == True:
             number_difficult_word = number_difficult_word + 1
+        if readability_formulas.isPeacockWord(char) == True:
+            number_peacock_word = number_peacock_word + 1
+            #print("Peacock word")
+            #print(char)
+        if readability_formulas.isStopWord(char) == True:
+            number_stop_word = number_stop_word + 1 
+            #print("Stop word")
+            #print(char)
+        if readability_formulas.isWeaselWord(char) == True:
+            number_weasel_word = number_weasel_word + 1 
+            #print("weasel word")
+            #print(char)
         
     average_word_length = float(chars_number) / words_count
     long_word_rate = float(long_word_number) / words_count
@@ -493,6 +515,9 @@ for body in bodies:
     complex_word_rate = float(complex_word_number) / words_count
     nominalization_word_rate = float(number_nominalization_word) / words_count
     to_be_word_rate = float(number_to_be_word) / words_count
+    difficult_word_rate = float(number_difficult_word) / words_count
+    common_word_rate = 1 - difficult_word_rate
+    stop_word_rate = float(number_stop_word) / words_count
 
     # add character count into features
     chars_numbers.append(chars_number)
@@ -506,6 +531,9 @@ for body in bodies:
     average_syllable_nums.append(average_syllable_num)
     nominalization_word_rates.append(nominalization_word_rate)
     to_be_word_rates.append(to_be_word_rate)
+    common_word_rates.append(common_word_rate)
+    difficult_word_rates.append(difficult_word_rate)
+    Stop_word_rates.append(stop_word_rate)
     
     # get sentences related features.
     # split body into sentences
@@ -519,6 +547,7 @@ for body in bodies:
     number_sent_begin_with_InterrogativePronoun = 0
     preposition_number = 0
     pronoun_number = 0
+    
     for sentence in sentences:
     # find the number of question sentences    
         if '?' in sentence:
@@ -531,16 +560,23 @@ for body in bodies:
         if sentence.startswith('A ') or sentence.startswith('An ') or sentence.startswith('The '):
             sentence_number_with_article = sentence_number_with_article + 1
     # find the number of Auxiliary Verbs
-        if hasAuxiliaryVerb(sentence) == True:
+        if text_stat_pos.hasAuxiliaryVerb(sentence) == True:
             #print(sentence + "\n")
             sentence_with_auxiliary_verb = sentence_with_auxiliary_verb + 1
+        if readability_formulas.hasPeacockPhrase(sentence) == True:
+            number_peacock_word = number_peacock_word + 1
+            #print(sentence)
+        if readability_formulas.hasWeaselPhrase(sentence) == True:
+            number_weasel_word = number_weasel_word + 1
+            #print(sentence)
+            
     # find conjunction rate
-        current_conj_number = getConjunctionCount(sentence)
+        current_conj_number = text_stat_pos.getConjunctionCount(sentence)
         conjunction_number = conjunction_number + current_conj_number
     # Get proposition rate
-        preposition_number = preposition_number + getPrepositionCount(sentence)
+        preposition_number = preposition_number + text_stat_pos.getPrepositionCount(sentence)
     # Get pronoun rate
-        pronoun_number = pronoun_number + getPronounCount(sentence)
+        pronoun_number = pronoun_number + text_stat_pos.getPronounCount(sentence)
         
     sum_len = 0
     sent_num = len(sentences)
@@ -554,7 +590,7 @@ for body in bodies:
     number_sent_begin_with_preposition = 0
     number_sent_begin_witn_pronoun = 0
     number_sent_begin_with_subConj = 0
-    """
+    
     for sentence in sentences:
         sent_len = len(sentence)
         sum_len = sum_len + sent_len
@@ -566,23 +602,23 @@ for body in bodies:
             large_sent_number = large_sent_number + 1
         if sent_len <= 15:
             short_sent_number = short_sent_number + 1
-        if True == SentenceBeginWithConj(sentence):
+        if True == text_stat_pos.SentenceBeginWithConj(sentence):
             number_sent_begin_with_conjuction = number_sent_begin_with_conjuction + 1
-        if True == SentenceBeginWithInterrogativePronoun(sentence):
+        if True == text_stat_pos.SentenceBeginWithInterrogativePronoun(sentence):
             number_sent_begin_with_InterrogativePronoun = number_sent_begin_with_InterrogativePronoun + 1
-        if True == SentencePassiveVoice(sentence):
+        if True == text_stat_pos.SentencePassiveVoice(sentence):
             #print("Passive")
             #print(sentence + "\n")
             number_passive_voice_sent = number_passive_voice_sent + 1
-        if True == SentenceBeginWithPrep(sentence):
+        if True == text_stat_pos.SentenceBeginWithPrep(sentence):
             #print("Prep")
             #print(sentence + "\n")
             number_sent_begin_with_preposition = number_sent_begin_with_preposition + 1  
-        if True == SentenceBeginWithPronoun(sentence):
+        if True == text_stat_pos.SentenceBeginWithPronoun(sentence):
             #print("Pronoun")
             #print(sentence + "\n")
             number_sent_begin_witn_pronoun = number_sent_begin_witn_pronoun + 1
-        if True == SentenceBeginWithSubConj(sentence):
+        if True == text_stat_pos.SentenceBeginWithSubConj(sentence):
             #print("Sub conj")
             #print(sentence + "\n")
             number_sent_begin_with_subConj = number_sent_begin_with_subConj + 1
@@ -602,6 +638,8 @@ for body in bodies:
     Pronoun_sent_rate = float(number_sent_begin_witn_pronoun) / sent_num
     SubConj_sent_rate = float(number_sent_begin_with_subConj) / sent_num
     Pronoun_rate = float(pronoun_number) / words_count
+    Peacock_word_rate = float(number_peacock_word) / words_count
+    weasel_word_rate = float(number_weasel_word) / words_count
     
     max_sent_lengths.append(max_length)
     min_sent_lengths.append(min_length)
@@ -621,7 +659,9 @@ for body in bodies:
     Pronoun_sent_rates.append(Pronoun_sent_rate)
     Pronoun_rates.append(Pronoun_rate)
     SubConj_sent_rates.append(SubConj_sent_rate)
-    """
+    Peacock_word_rates.append(Peacock_word_rate)
+    weasel_word_rates.append(weasel_word_rate)
+    
     ################### Readability Formulas ##################################
     # Automated readability index
     #print(sentences)
@@ -638,62 +678,62 @@ for body in bodies:
     print("\n")
     """
     ari = readability_formulas.getARI(chars_number, words_count, sent_num)
-    print("Automated readability index")
-    print(ari)
+    #print("Automated readability index")
+    #print(ari)
     aris.append(ari)
     #print("Difficult word count \n")
     #print(number_difficult_word)
     BI = readability_formulas.BormuthIndex(chars_number, words_count, sent_num, number_difficult_word)
     BIs.append(BI)
-    if BI >= 0:
-        print(BI)
+   # if BI >= 0:
+    #    print(BI)
     
     CLIndex = readability_formulas.getColemanLaurIndex(chars_number, words_count, sent_num)
-    print("Coleman-liau index")
-    print(CLIndex)
+    #print("Coleman-liau index")
+    #print(CLIndex)
     CLIndexes.append(CLIndex)
     
     # forcast readability
     eduYear = readability_formulas.getEduYears(one_syllable_word_cnt)
     eduYears.append(eduYear)
-    print("Forcast readability")
-    print(eduYear)
+    #print("Forcast readability")
+    #print(eduYear)
     
     # Flesch reading ease
     FlecshReading = readability_formulas.getFleschReading(words_count, sent_num, one_syllable_word_cnt)
     FlecshReadings.append(FlecshReading)
-    print("Flesch Reading ease")
-    print(FlecshReading)
+    #print("Flesch Reading ease")
+    #print(FlecshReading)
     
     # Flesch Kincaid
     FlecshKincaid = readability_formulas.getFleschKincaid(words_count, sent_num, one_syllable_word_cnt)
     FlecshKincaids.append(FlecshKincaid)
-    print("Flesch Kincaid")
-    print(FlecshKincaid)
+    #print("Flesch Kincaid")
+    #print(FlecshKincaid)
     
     # Gunning fog index
     GunningFogIndex = readability_formulas.getGunningFogIndex(words_count, sent_num, complex_word_number)
     GunningFogIndexes.append(GunningFogIndex)
-    print("Gunning fog index")
-    print(GunningFogIndex)
+    #print("Gunning fog index")
+    #print(GunningFogIndex)
     
     # Lasbarhedsindex
     LIX = readability_formulas.getLIX(words_count, sent_num, long_word_number)
     LIXes.append(LIX)
-    print("LIX")
-    print(LIX)
+    #print("LIX")
+    #print(LIX)
     
     # Miyazaki EFL readability index
     MiyazakiEFL = readability_formulas.getMiyazakiEFL(chars_number, words_count, sent_num)
     MiyazakiEFLs.append(MiyazakiEFL)
-    print("Miyazaki EFL readability index")
-    print(MiyazakiEFL)
+    #print("Miyazaki EFL readability index")
+    #print(MiyazakiEFL)
     
     # New Dale Chall
     newDaleChall = readability_formulas.getNewDaleChall(words_count, sent_num, number_difficult_word)
     newDaleChalls.append(newDaleChall)
-    print("new Dale chall")
-    print(newDaleChall)
+    #print("new Dale chall")
+    #print(newDaleChall)
     
     # Smog grading
     smogGrading = readability_formulas.getSmogGrading(sent_num, complex_word_number)
@@ -701,17 +741,13 @@ for body in bodies:
     print("Smog grading")
     print(smogGrading)
     
+    
+    ##### Extraction of structure features ###
+path = "/Users/lixiaodan/Desktop/wikipedia_project/dataset/enwiki-20180101-pages-articles1.xml"
+file = open(path)
+#contents = f.read()
+for line in file: 
+    print( line )
 
     
     
-
-    
-    
-    
-     
-        
-        
-        
-
-    
-        
