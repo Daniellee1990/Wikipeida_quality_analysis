@@ -106,7 +106,7 @@ for line in f:
         
 for cont in bodies:
     title = cont[0]
-    del cont[0] # delete titles in body.
+    #del cont[0] # delete titles in body.
     titles.append(title)
     if title in good_article_names:
         labels.append(1)
@@ -159,14 +159,22 @@ Peacock_word_rates = list()
 Stop_word_rates = list()
 weasel_word_rates = list()
 
+text_statistics_features = dict()
+style_features = dict()
+readability_features = dict()
+
 #bodies = bodies[0:50]
 for body in bodies:
+    title = body[0][0:- 1]
+    print(title)
+    del body[0]
+    text_statistics_feature = list()
+    style_feature = list()
+    readability_feature = list()
     chars_number = 0  
     bodystr = ""
     for paragraph in body:
         bodystr = bodystr + paragraph 
-    #print(bodystr)
-    #print("\n")
     
     #### get the text statistics
     # get word related features
@@ -189,8 +197,6 @@ for body in bodies:
     
     for char in chars:
         chars_number = chars_number + len(char)
-        #print("chars_number")
-        #print(chars_number)
         if len(char) >= 6:
             long_word_number = long_word_number + 1
         syllables_num = text_stat_pos.countSyllables(char)
@@ -207,16 +213,10 @@ for body in bodies:
             number_difficult_word = number_difficult_word + 1
         if readability_formulas.isPeacockWord(char) == True:
             number_peacock_word = number_peacock_word + 1
-            #print("Peacock word")
-            #print(char)
         if readability_formulas.isStopWord(char) == True:
             number_stop_word = number_stop_word + 1 
-            #print("Stop word")
-            #print(char)
         if readability_formulas.isWeaselWord(char) == True:
-            number_weasel_word = number_weasel_word + 1 
-            #print("weasel word")
-            #print(char)
+            number_weasel_word = number_weasel_word + 1
         
     average_word_length = float(chars_number) / words_count
     long_word_rate = float(long_word_number) / words_count
@@ -228,7 +228,8 @@ for body in bodies:
     difficult_word_rate = float(number_difficult_word) / words_count
     common_word_rate = 1 - difficult_word_rate
     stop_word_rate = float(number_stop_word) / words_count
-
+    
+    ##### Text statistics ############
     # add character count into features
     chars_numbers.append(chars_number)
     # add average word length into features
@@ -239,6 +240,8 @@ for body in bodies:
     long_word_rates.append(long_word_rate)
     one_syllable_word_rates.append(one_syllable_word_rate)
     average_syllable_nums.append(average_syllable_num)
+    
+    ################ style features ######
     nominalization_word_rates.append(nominalization_word_rate)
     to_be_word_rates.append(to_be_word_rate)
     common_word_rates.append(common_word_rate)
@@ -271,15 +274,13 @@ for body in bodies:
             sentence_number_with_article = sentence_number_with_article + 1
     # find the number of Auxiliary Verbs
         if text_stat_pos.hasAuxiliaryVerb(sentence) == True:
-            #print(sentence + "\n")
             sentence_with_auxiliary_verb = sentence_with_auxiliary_verb + 1
         if readability_formulas.hasPeacockPhrase(sentence) == True:
             number_peacock_word = number_peacock_word + 1
-            #print(sentence)
         if readability_formulas.hasWeaselPhrase(sentence) == True:
             number_weasel_word = number_weasel_word + 1
-            #print(sentence)
             
+    ## writing style        
     # find conjunction rate
         current_conj_number = text_stat_pos.getConjunctionCount(sentence)
         conjunction_number = conjunction_number + current_conj_number
@@ -317,20 +318,12 @@ for body in bodies:
         if True == text_stat_pos.SentenceBeginWithInterrogativePronoun(sentence):
             number_sent_begin_with_InterrogativePronoun = number_sent_begin_with_InterrogativePronoun + 1
         if True == text_stat_pos.SentencePassiveVoice(sentence):
-            #print("Passive")
-            #print(sentence + "\n")
             number_passive_voice_sent = number_passive_voice_sent + 1
         if True == text_stat_pos.SentenceBeginWithPrep(sentence):
-            #print("Prep")
-            #print(sentence + "\n")
             number_sent_begin_with_preposition = number_sent_begin_with_preposition + 1  
         if True == text_stat_pos.SentenceBeginWithPronoun(sentence):
-            #print("Pronoun")
-            #print(sentence + "\n")
             number_sent_begin_witn_pronoun = number_sent_begin_witn_pronoun + 1
         if True == text_stat_pos.SentenceBeginWithSubConj(sentence):
-            #print("Sub conj")
-            #print(sentence + "\n")
             number_sent_begin_with_subConj = number_sent_begin_with_subConj + 1
 
     average_sent_len = float(sum_len) / sent_num
@@ -351,6 +344,7 @@ for body in bodies:
     Peacock_word_rate = float(number_peacock_word) / words_count
     weasel_word_rate = float(number_weasel_word) / words_count
     
+    ## Text statistics
     max_sent_lengths.append(max_length)
     min_sent_lengths.append(min_length)
     large_sent_rates.append(large_sent_rate)
@@ -358,6 +352,8 @@ for body in bodies:
     average_sent_lens.append(average_sent_len)
     question_rates.append(question_rate)
     question_nums.append(question_sent_number)
+    
+    #### writing style ###
     Article_sentence_rates.append(Article_sentence_rate)
     Auxiliary_verb_rates.append(Auxiliary_verb_rate)
     Conjunction_rates.append(Conjunction_rate)
@@ -374,82 +370,99 @@ for body in bodies:
     
     ################### Readability Formulas ##################################
     # Automated readability index
-    #print(sentences)
-    """
-    print("characters number")
-    print(chars_number)
-    print("\n")
-    print("words count")
-    print(words_count)
-    print("\n")
-    print("sentence number")
-    #sent_num = len(sentences)
-    print(sent_num)
-    print("\n")
-    """
     ari = readability_formulas.getARI(chars_number, words_count, sent_num)
-    #print("Automated readability index")
-    #print(ari)
     aris.append(ari)
-    #print("Difficult word count \n")
-    #print(number_difficult_word)
     BI = readability_formulas.BormuthIndex(chars_number, words_count, sent_num, number_difficult_word)
     BIs.append(BI)
-   # if BI >= 0:
-    #    print(BI)
-    
     CLIndex = readability_formulas.getColemanLaurIndex(chars_number, words_count, sent_num)
-    #print("Coleman-liau index")
-    #print(CLIndex)
     CLIndexes.append(CLIndex)
-    
     # forcast readability
     eduYear = readability_formulas.getEduYears(one_syllable_word_cnt)
     eduYears.append(eduYear)
-    #print("Forcast readability")
-    #print(eduYear)
-    
+
     # Flesch reading ease
     FlecshReading = readability_formulas.getFleschReading(words_count, sent_num, one_syllable_word_cnt)
     FlecshReadings.append(FlecshReading)
-    #print("Flesch Reading ease")
-    #print(FlecshReading)
     
     # Flesch Kincaid
     FlecshKincaid = readability_formulas.getFleschKincaid(words_count, sent_num, one_syllable_word_cnt)
     FlecshKincaids.append(FlecshKincaid)
-    #print("Flesch Kincaid")
-    #print(FlecshKincaid)
     
     # Gunning fog index
     GunningFogIndex = readability_formulas.getGunningFogIndex(words_count, sent_num, complex_word_number)
     GunningFogIndexes.append(GunningFogIndex)
-    #print("Gunning fog index")
-    #print(GunningFogIndex)
     
     # Lasbarhedsindex
     LIX = readability_formulas.getLIX(words_count, sent_num, long_word_number)
     LIXes.append(LIX)
-    #print("LIX")
-    #print(LIX)
     
     # Miyazaki EFL readability index
     MiyazakiEFL = readability_formulas.getMiyazakiEFL(chars_number, words_count, sent_num)
     MiyazakiEFLs.append(MiyazakiEFL)
-    #print("Miyazaki EFL readability index")
-    #print(MiyazakiEFL)
     
     # New Dale Chall
     newDaleChall = readability_formulas.getNewDaleChall(words_count, sent_num, number_difficult_word)
     newDaleChalls.append(newDaleChall)
-    #print("new Dale chall")
-    #print(newDaleChall)
     
     # Smog grading
     smogGrading = readability_formulas.getSmogGrading(sent_num, complex_word_number)
     smogGradings.append(smogGrading)
-    print("Smog grading")
-    print(smogGrading)
+    
+    ### summerize readability features
+    readability_feature.append(ari)
+    readability_feature.append(BI)
+    readability_feature.append(CLIndex)
+    readability_feature.append(eduYear)
+    readability_feature.append(FlecshReading)
+    readability_feature.append(FlecshKincaid)
+    readability_feature.append(GunningFogIndex)
+    readability_feature.append(LIX)
+    readability_feature.append(MiyazakiEFL)
+    readability_feature.append(newDaleChall)
+    readability_feature.append(smogGrading)
+    
+    ### summerize text statistics
+    text_statistics_feature.append(max_length)
+    text_statistics_feature.append(min_length)
+    text_statistics_feature.append(large_sent_rate)
+    text_statistics_feature.append(short_sent_rate)
+    text_statistics_feature.append(average_sent_len)
+    text_statistics_feature.append(question_rate)
+    text_statistics_feature.append(question_sent_number)
+    text_statistics_feature.append(chars_number)
+    text_statistics_feature.append(average_word_length)
+    text_statistics_feature.append(complex_word_rate)
+    text_statistics_feature.append(words_count)
+    text_statistics_feature.append(long_word_rate)
+    text_statistics_feature.append(one_syllable_word_rate)
+    text_statistics_feature.append(average_syllable_num)
+    
+     ## summerize writing style
+    style_feature.append(Article_sentence_rate)
+    style_feature.append(Auxiliary_verb_rate)
+    style_feature.append(Conjunction_rate)
+    style_feature.append(Preposition_rate)
+    style_feature.append(Conjunction_sent_rate)
+    style_feature.append(Interrogative_pronoun_sent_rate)
+    style_feature.append(Passive_voice_sent_rate)
+    style_feature.append(Preposition_sent_rate)
+    style_feature.append(Pronoun_sent_rate)
+    style_feature.append(Pronoun_rate)
+    style_feature.append(SubConj_sent_rate)
+    style_feature.append(Peacock_word_rate)
+    style_feature.append(weasel_word_rate)
+    style_feature.append(to_be_word_rate)
+    style_feature.append(common_word_rate)
+    style_feature.append(difficult_word_rate)
+    style_feature.append(stop_word_rate)
+    style_feature.append(nominalization_word_rate)
+
+    text_statistics_features[title] = text_statistics_feature
+    style_features[title] = style_feature
+    readability_features[title] = readability_feature
+    
+    
+    
 
     
     
