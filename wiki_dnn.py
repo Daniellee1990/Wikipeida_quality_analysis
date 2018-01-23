@@ -15,19 +15,55 @@ from keras.utils import np_utils
 from keras.layers import Dropout
 from keras.optimizers import SGD
 
-
 seed = 7
 np.random.seed(seed)
 
 # define baseline model
-def DNN():
+def DNN(X_train, Y_train, batch_size, epochs, dropout):
 	# create model
-	model = Sequential()
-	model.add(Dense(8, input_dim=33, init='normal', activation='relu'))
-	model.add(Dense(3, activation='softmax'))
-	# Compile model
-	model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-	return model
+    model = Sequential() 
+    model.add(Dense(20, input_dim=X_train.shape[1], init='normal', activation='relu'))
+    model.add(Dropout(dropout))
+    model.add(Dense(100, init='normal', activation='relu'))
+    model.add(Dropout(dropout))
+    model.add(Dense(200, init='normal', activation='relu'))
+    model.add(Dropout(dropout))
+    model.add(Dense(200, init='normal', activation='relu'))
+    model.add(Dropout(dropout))
+    model.add(Dense(200, init='normal', activation='relu'))
+    model.add(Dropout(dropout))
+    #sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    model.add(Dense(Y_train.shape[1], init='normal', activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    #model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+    print(model.summary())
+    model.fit(X_train, Y_train, batch_size, epochs)
+    return model
+
+def getAccuracy(prediction, y_test): ### prediction and y_test are both encoded.
+    sample_size = prediction.shape[0]
+    col_num = prediction.shape[1]
+    correct_num = 0
+    wrong_num = 0
+    for i in range(sample_size):
+        cur_row = prediction[i,:]
+        max = 0
+        max_id = 0
+        res_id = 0 
+        for j in range(col_num):
+            if cur_row[j] > max:
+                max = cur_row[j]
+                max_id = j
+        for k in range(col_num):
+            if y_test[i, k] == 1:
+                res_id = k
+                break
+        if res_id == max_id:
+            correct_num = correct_num + 1
+        else:
+            wrong_num = wrong_num + 1
+    accuracy = float(correct_num) / sample_size
+    return accuracy
 
 #wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_with_all_features.csv')
 wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_without_network.csv')
@@ -52,63 +88,14 @@ features = wikidata.iloc[:, 0:-1]
 min_max_scaler = preprocessing.MinMaxScaler()
 features_minmax = min_max_scaler.fit_transform(features)
 
-X_train, X_test, Y_train, Y_test = train_test_split(features_minmax, onehotlabels, test_size=0.33, random_state=seed)
+X_train, X_test, Y_train, Y_test = train_test_split(features_minmax, onehotlabels, test_size=0.3, random_state=seed)
 
 epochs = 50
 batch_size = 30
 dropoutRate = 0.2
-numHidden = 40
 
-##  neural network
-"""
-estimator = KerasClassifier(build_fn=DNN, nb_epoch=100, batch_size=5, verbose=0)
-estimator.fit(X_train, Y_train)
-predictions = estimator.predict(X_test)
-print(predictions)
-"""
-
-### DNN
-model = Sequential() 
-model.add(Dense(20, input_dim=X_train.shape[1], init='normal', activation='relu'))
-model.add(Dropout(0.2))
-model.add(Dense(100, init='normal', activation='relu'))
-model.add(Dropout(0.2))
-model.add(Dense(200, init='normal', activation='relu'))
-model.add(Dropout(0.2))
-model.add(Dense(200, init='normal', activation='relu'))
-model.add(Dropout(0.2))
-model.add(Dense(200, init='normal', activation='relu'))
-model.add(Dropout(0.2))
-sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-model.add(Dense(Y_train.shape[1], init='normal', activation='softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-#model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
-print(model.summary())
-model.fit(X_train, Y_train, batch_size, epochs)
+model = DNN(X_train, Y_train, batch_size, epochs, dropoutRate)
 predictions = model.predict(X_test)
-
-test_size = X_test.shape[0]
-col_size = Y_test.shape[1]
-correct_num = 0
-wrong_num = 0
-
-for i in range(test_size):
-    cur_row = Y_test[i,:]
-    cur_index = 0
-    for j in range(col_size):
-        if cur_row[j] == 1:
-            cur_index = j
-            break
-    pre_id = 0
-    pre_max = 0
-    for k in range(col_size):
-        if predictions[i, k] > pre_max:
-            pre_max = predictions[i, k]
-            pre_id = k
-    if cur_index == k:
-        correct_num = correct_num + 1
-    else:
-        wrong_num = wrong_num + 1
-
-accuracy = float(correct_num) / test_size
-print(accuracy)
+precision = getAccuracy(predictions, Y_test)
+print("precision")
+print(precision)

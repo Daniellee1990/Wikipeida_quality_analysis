@@ -68,6 +68,3 @@ print(acc_oneVsrest)
 print("Accuracy for output code classifier")
 acc_output = float(correct_output) / samples_num
 print(acc_output)
-
-
-
