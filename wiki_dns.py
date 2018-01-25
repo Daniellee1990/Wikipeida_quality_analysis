@@ -13,10 +13,11 @@ import numpy as np
 from keras.utils import np_utils
 import deep_learning_models
 
-#wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_with_all_features.csv')
+wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_with_all_features.csv')
 #wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_without_network.csv')
-wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_without_hist_net.csv')
-
+#wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_without_hist_net.csv')
+colnames = list(wikidata)
+#print(colnames)
 
 labels = wikidata["page_class"]
 for i in range(labels.shape[0]):
@@ -48,14 +49,14 @@ X_train_CNN = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
 X_test_CNN = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
 ### create the deep learning models
-"""
 epochs = 30
-batch_size = 100
+batch_size = 190 #195 best now #190 # 100 # 250
 dropoutRate = 0.2
 """
-epochs = 50
-batch_size = 50
-dropoutRate = 0.2
+epochs = 200
+batch_size = 20
+dropoutRate = 0.3
+"""
 
 ## stacked LSTM with dropout
 model = deep_learning_models.stacked_LSTMs_with_dropout(X_train_LSTM, y_train, y_test, batch_size, epochs, dropoutRate)
