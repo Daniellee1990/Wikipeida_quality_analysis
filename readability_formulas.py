@@ -135,13 +135,3 @@ def getNewDaleChall(wordCnt, sentCnt, diffwordCnt):
 ## SMOG grading:
 def getSmogGrading(sentCnt, complexWordCnt):
     return math.sqrt(30.0 * complexWordCnt / sentCnt) + 3
-    
-    
-    
-    
-
-    
-
-
-
-    

@@ -14,20 +14,22 @@ from keras.layers import LSTM
 from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
 from keras.layers import Flatten
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc
 
 def stacked_LSTM(X_train, y_train, X_test, y_test, batch_size, epochs):
     ## CNN LSTM
     model = Sequential()
-    model.add(LSTM(32, return_sequences=True, input_shape=(1, X_test.shape[2])))
-    model.add(LSTM(32, return_sequences=True))
-    model.add(LSTM(32))
+    model.add(LSTM(50, return_sequences=True, input_shape=(1, X_test.shape[2]))) # 32 # 50
+    model.add(LSTM(200, return_sequences=True)) #32
+    model.add(LSTM(200)) # 32 # 200
     model.add(Dense(y_test.shape[1], activation='softmax'))
     model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
     #model.compile(loss='categorical_crossentropy', optimizer='adam')
     #model.compile(loss=losses.categorical_crossentropy, optimizer=optimizers.SGD(lr=0.01), metrics=['accuracy'])
     #print(model.summary())
-    model.fit(X_train, y_train, batch_size, epochs)
-    return model
+    history = model.fit(X_train, y_train, batch_size, epochs)
+    return model, history
     
 def CNN(X_train, y_train, y_test, batch_size, epochs):
     ## CNN
@@ -40,8 +42,8 @@ def CNN(X_train, y_train, y_test, batch_size, epochs):
     #model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     #model.compile(loss=losses.categorical_crossentropy, optimizer=optimizers.SGD(lr=0.01), metrics=['accuracy'])
     #print(model.summary())
-    model.fit(X_train, y_train, batch_size, epochs)
-    return model
+    history = model.fit(X_train, y_train, batch_size, epochs)
+    return model, history
 
 def CNN_LSTM(X_train, y_train, y_test, batch_size, epochs, dropoutRate):
     ## CNN LSTM
@@ -55,43 +57,56 @@ def CNN_LSTM(X_train, y_train, y_test, batch_size, epochs, dropoutRate):
     #model.compile(loss='categorical_crossentropy', optimizer='adam')
     #model.compile(loss=losses.categorical_crossentropy, optimizer=optimizers.SGD(lr=0.01), metrics=['accuracy'])
     #print(model.summary())
-    model.fit(X_train, y_train, batch_size, epochs)
-    return model
+    history = model.fit(X_train, y_train, batch_size, epochs)
+    return model, history
 
-def stacked_LSTMs_with_dropout(X_train, y_train, y_test, batch_size, epochs, dropout_rate):
+def LSTM_with_dropout(X_train, y_train, x_test, y_test, batch_size, epochs, dropout_rate):
     ## stacked LSTM
     model = Sequential()
-    model.add(LSTM(33, input_shape=(X_train.shape[1],X_train.shape[2]), return_sequences=True))
+    model.add(LSTM(50, input_shape=(X_train.shape[1],X_train.shape[2]), return_sequences=True)) #33
+    #model.add(LSTM(32, return_sequences=True, input_shape=(1, x_test.shape[2])))
     model.add(Dropout(dropout_rate))
-    model.add(LSTM(100))
-    model.add(Dropout(dropout_rate))
+    #model.add(LSTM(100))
+    #model.add(Dropout(dropout_rate))
+    model.add(Flatten())
     model.add(Dense(y_test.shape[1], activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='adam')
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
     #print(model.summary())
-    model.fit(X_train, y_train, batch_size, epochs)
-    return model
+    history = model.fit(X_train, y_train, batch_size, epochs)
+    return model, history
+
+def basic_LSTM(X_train, y_train, x_test, y_test, batch_size, epochs):
+    ## stacked LSTM
+    model = Sequential()
+    model.add(LSTM(50, input_shape=(X_train.shape[1],X_train.shape[2]), return_sequences=True)) # 33
+    model.add(Flatten())
+    model.add(Dense(y_test.shape[1], activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    #print(model.summary())
+    history = model.fit(X_train, y_train, batch_size, epochs)
+    return model, history
 
 # define baseline model
 def DNN(X_train, Y_train, batch_size, epochs, dropout):
 	# create model
     model = Sequential() 
-    model.add(Dense(20, input_dim=X_train.shape[1], init='normal', activation='relu'))
+    model.add(Dense(20, input_dim=X_train.shape[1], init='normal', activation='relu')) # 20
     model.add(Dropout(dropout))
     model.add(Dense(100, init='normal', activation='relu'))
     model.add(Dropout(dropout))
-    model.add(Dense(200, init='normal', activation='relu'))
+    model.add(Dense(100, init='normal', activation='relu')) # 100
     model.add(Dropout(dropout))
-    model.add(Dense(200, init='normal', activation='relu'))
-    model.add(Dropout(dropout))
-    model.add(Dense(200, init='normal', activation='relu'))
-    model.add(Dropout(dropout))
+    #model.add(Dense(200, init='normal', activation='relu'))
+    #model.add(Dropout(dropout))
+    #model.add(Dense(200, init='normal', activation='relu'))
+    #model.add(Dropout(dropout))
     #sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     model.add(Dense(Y_train.shape[1], init='normal', activation='softmax'))
     model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
     #model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
     #print(model.summary())
-    model.fit(X_train, Y_train, batch_size, epochs)
-    return model
+    history = model.fit(X_train, Y_train, batch_size, epochs)
+    return model, history
 
 def getAccuracy(prediction, y_test): ### prediction and y_test are both encoded.
     sample_size = prediction.shape[0]
@@ -117,3 +132,37 @@ def getAccuracy(prediction, y_test): ### prediction and y_test are both encoded.
             wrong_num = wrong_num + 1
     accuracy = float(correct_num) / sample_size
     return accuracy
+
+def plotTrainingAccuracy(history):
+    plt.plot(history.history['acc'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train'], loc='upper left')
+    plt.show()
+    
+def plotTrainingLoss(history):
+    plt.plot(history.history['loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train'], loc='upper left')
+    plt.show()
+    
+def plotRoc(y_predict, y_label):
+    # roc for unigram
+    fprUni, tprUni, _ = roc_curve(y_predict, y_label)
+    roc_aucUni = auc(fprUni, tprUni)
+    
+    plt.figure()
+    lw = 2
+    plt.plot(fprUni, tprUni, color='darkorange',
+             lw=lw, label='ROC curve (AUC = %0.2f)' % roc_aucUni)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver operating characteristic')
+    plt.legend(loc="lower right")
+    plt.show()
