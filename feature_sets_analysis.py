@@ -5,7 +5,7 @@ Created on Tue Jan 30 10:16:53 2018
 
 @author: lixiaodan
 """
-
+E 
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -39,7 +39,6 @@ datasets.append(wikidata_edit_hist)
 precisions = list()
 names = ["Writing style", "Text statistics", "Structure feature", "Readability scores", "Network features", "Edit history"]
 markers = ['o', ',', 's', '*', '<', '.']
-
 for index, wikidata in enumerate(datasets):
     labels = wikidata["page_class"]
     for i in range(labels.shape[0]):
@@ -83,8 +82,7 @@ for index, wikidata in enumerate(datasets):
     cur_label = names[index]
     cur_marker = markers[index]
     print("Model accuracy")
-    plt.plot(hist.history['acc'], marker = cur_marker, label= cur_label, markersize=10)
-    
+    plt.plot(hist.history['acc'], marker = cur_marker, label= cur_label, markersize=10)    
 plt.title('Model training accuracy')
 plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
@@ -137,7 +135,7 @@ for index, wikidata in enumerate(datasets):
     print("Model loss")
     plt.plot(hist.history['loss'], marker = cur_marker, label= cur_label, markersize=10)
     
-plt.title('Model loss')
+plt.title('Model training loss')
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend(shadow=False, fontsize='xx-small', loc='lower left', prop={'size': 7})

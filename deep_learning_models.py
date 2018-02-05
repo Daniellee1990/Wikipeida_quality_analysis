@@ -10,7 +10,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.optimizers import SGD
-from keras.layers import LSTM
+from keras.layers import LSTM, Bidirectional
 from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
 from keras.layers import Flatten
@@ -23,8 +23,8 @@ def stacked_LSTM(X_train, y_train, X_test, y_test, batch_size, epochs):
     model.add(LSTM(50, return_sequences=True, input_shape=(1, X_test.shape[2]))) # 32 # 50
     model.add(LSTM(200, return_sequences=True)) #32
     model.add(LSTM(200)) # 32 # 200
-    model.add(Dense(y_test.shape[1], activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    model.add(Dense(y_test.shape[1], activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     #model.compile(loss='categorical_crossentropy', optimizer='adam')
     #model.compile(loss=losses.categorical_crossentropy, optimizer=optimizers.SGD(lr=0.01), metrics=['accuracy'])
     #print(model.summary())
@@ -37,8 +37,8 @@ def CNN(X_train, y_train, y_test, batch_size, epochs):
     model.add(Conv1D(input_shape=(X_train.shape[1], 1), filters=5, kernel_size=1, activation='relu'))
     model.add(MaxPooling1D(pool_size=1))
     model.add(Flatten())
-    model.add(Dense(y_test.shape[1], activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    model.add(Dense(y_test.shape[1], activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     #model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     #model.compile(loss=losses.categorical_crossentropy, optimizer=optimizers.SGD(lr=0.01), metrics=['accuracy'])
     #print(model.summary())
@@ -52,8 +52,8 @@ def CNN_LSTM(X_train, y_train, y_test, batch_size, epochs, dropoutRate):
     model.add(MaxPooling1D(pool_size=2))
     model.add(LSTM(256))
     model.add(Dropout(dropoutRate))
-    model.add(Dense(y_test.shape[1], activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    model.add(Dense(y_test.shape[1], activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     #model.compile(loss='categorical_crossentropy', optimizer='adam')
     #model.compile(loss=losses.categorical_crossentropy, optimizer=optimizers.SGD(lr=0.01), metrics=['accuracy'])
     #print(model.summary())
@@ -69,20 +69,29 @@ def LSTM_with_dropout(X_train, y_train, x_test, y_test, batch_size, epochs, drop
     #model.add(LSTM(100))
     #model.add(Dropout(dropout_rate))
     model.add(Flatten())
-    model.add(Dense(y_test.shape[1], activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    model.add(Dense(y_test.shape[1], activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     #print(model.summary())
     history = model.fit(X_train, y_train, batch_size, epochs)
     return model, history
 
 def basic_LSTM(X_train, y_train, x_test, y_test, batch_size, epochs):
-    ## stacked LSTM
     model = Sequential()
     model.add(LSTM(50, input_shape=(X_train.shape[1],X_train.shape[2]), return_sequences=True)) # 33
     model.add(Flatten())
-    model.add(Dense(y_test.shape[1], activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    model.add(Dense(y_test.shape[1], activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     #print(model.summary())
+    history = model.fit(X_train, y_train, batch_size, epochs)
+    return model, history
+
+def Bidirectional_LSTM(X_train, y_train, x_test, y_test, batch_size, epochs):
+    model = Sequential()
+    model.add(Bidirectional(LSTM(50, return_sequences=True), input_shape=(X_train.shape[1],X_train.shape[2])))
+    model.add(Flatten())
+    model.add(Dense(y_test.shape[1], activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    print(model.summary())
     history = model.fit(X_train, y_train, batch_size, epochs)
     return model, history
 
@@ -92,17 +101,17 @@ def DNN(X_train, Y_train, batch_size, epochs, dropout):
     model = Sequential() 
     model.add(Dense(20, input_dim=X_train.shape[1], init='normal', activation='relu')) # 20
     model.add(Dropout(dropout))
-    model.add(Dense(100, init='normal', activation='relu'))
+    model.add(Dense(50, init='normal', activation='relu')) # 100
     model.add(Dropout(dropout))
-    model.add(Dense(100, init='normal', activation='relu')) # 100
+    model.add(Dense(50, init='normal', activation='relu')) # 100
     model.add(Dropout(dropout))
     #model.add(Dense(200, init='normal', activation='relu'))
     #model.add(Dropout(dropout))
     #model.add(Dense(200, init='normal', activation='relu'))
     #model.add(Dropout(dropout))
     #sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-    model.add(Dense(Y_train.shape[1], init='normal', activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    model.add(Dense(Y_train.shape[1], init='normal', activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     #model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
     #print(model.summary())
     history = model.fit(X_train, Y_train, batch_size, epochs)

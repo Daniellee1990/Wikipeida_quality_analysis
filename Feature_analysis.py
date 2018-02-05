@@ -27,14 +27,6 @@ for i in range(labels.shape[0]):
         labels.loc[i] = '0'
     elif labels[i] == 'BC' or labels[i] == 'ST' or labels[i] == 'SB':
         labels.loc[i] = '1'
-    """
-    if labels[i] == 'FA' or labels[i] == 'AC':
-        labels.loc[i] = '0'
-    elif labels[i] == 'GA' or labels[i] == 'BC':
-        labels.loc[i] = '1'
-    elif labels[i] == 'ST' or labels[i] == 'SB':
-        labels.loc[i] = '2'
-    """
 
 labels = labels.convert_objects(convert_numeric=True)
 onehotlabels = np_utils.to_categorical(labels)

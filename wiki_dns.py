@@ -14,6 +14,7 @@ from keras.utils import np_utils
 import deep_learning_models
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
+import time
 
 wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_with_all_features.csv')
 #wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_without_network.csv')
@@ -68,8 +69,25 @@ dropoutRate = 0.3
 """
 y_test_re = np.argmax(y_test, axis=1)
 
+### Bidirectional LSTM 
+start_time0 = time.clock()
+model0, hist0 = deep_learning_models.Bidirectional_LSTM(X_train_LSTM, y_train, X_test_LSTM, y_test, batch_size, epochs)
+prediction0 = model0.predict(X_test_LSTM)
+end_time0 = time.clock()
+Bi_LSTM_performance = end_time0 - start_time0
+prediction0_re = np.argmax(prediction0, axis=1)
+Bidirectional_LSTM_accuracy = deep_learning_models.getAccuracy(prediction0, y_test)
+keys = hist0.history.keys()
+print(keys)
+print("Precision for bidirectional LSTM")
+print(Bidirectional_LSTM_accuracy)
+
+"""
+start_time1 = time.clock()
 model1, hist1 = deep_learning_models.basic_LSTM(X_train_LSTM, y_train, X_test_LSTM, y_test, batch_size, epochs)
 prediction1 = model1.predict(X_test_LSTM)
+end_time1 = time.clock()
+basic_LSTM_performance = end_time1 - start_time1
 prediction1_re = np.argmax(prediction1, axis=1)
 basic_LSTM_accuracy = deep_learning_models.getAccuracy(prediction1, y_test)
 keys = hist1.history.keys()
@@ -81,8 +99,11 @@ print(basic_LSTM_accuracy)
 #deep_learning_models.plotTrainingLoss(hist1)
 
 ## stacked LSTM with dropout
+start_time2 = time.clock()
 model2, hist2 = deep_learning_models.LSTM_with_dropout(X_train_LSTM, y_train, X_test_LSTM, y_test, batch_size, epochs, dropoutRate)
 prediction2 = model2.predict(X_test_LSTM)
+end_time2 = time.clock()
+LSTM_with_dropout_performance = end_time2 - start_time2
 prediction2_re = np.argmax(prediction2, axis=1)
 LSTM_with_dropout_accuracy = deep_learning_models.getAccuracy(prediction2, y_test)
 print("Precision for LSTM with dropout")
@@ -92,8 +113,11 @@ print(LSTM_with_dropout_accuracy)
 #deep_learning_models.plotTrainingLoss(hist2)
 
 ## CNN LSTM
+start_time3 = time.clock()
 model3, hist3 = deep_learning_models.CNN_LSTM(X_train_CNN, y_train, y_test, batch_size, epochs, dropoutRate)
 prediction3 = model3.predict(X_test_CNN)
+end_time3 = time.clock()
+CNN_LSTM_performance = end_time3 - start_time3
 prediction3_re = np.argmax(prediction3, axis=1)
 CNN_LSTM_precision = deep_learning_models.getAccuracy(prediction3, y_test)
 print("Precision for CNN LSTM")
@@ -103,8 +127,11 @@ print(CNN_LSTM_precision)
 #deep_learning_models.plotTrainingLoss(hist3)
 
 ## CNN
+start_time4 = time.clock()
 model4, hist4 = deep_learning_models.CNN(X_train_CNN, y_train, y_test, batch_size, epochs)
 prediction4 = model4.predict(X_test_CNN)
+end_time4 = time.clock()
+CNN_performance = end_time4 - start_time4
 prediction4_re = np.argmax(prediction4, axis=1)
 CNN_precision = deep_learning_models.getAccuracy(prediction4, y_test)
 print("Precision for CNN")
@@ -114,8 +141,11 @@ print(CNN_precision)
 #deep_learning_models.plotTrainingLoss(hist4)
 
 ## DNN
+start_time5 = time.clock()
 model5, hist5 = deep_learning_models.DNN(X_train, y_train, batch_size, epochs, dropoutRate)
 prediction5 = model5.predict(X_test)
+end_time5 = time.clock()
+DNN_performance = end_time5 - start_time5
 prediction5_re = np.argmax(prediction5, axis=1)
 DNN_precision = deep_learning_models.getAccuracy(prediction5, y_test)
 print("precision for DNN")
@@ -125,8 +155,11 @@ print(DNN_precision)
 #deep_learning_models.plotTrainingLoss(hist5)
 
 ## stacked LSTM
+start_time6 = time.clock()
 model6, hist6 = deep_learning_models.stacked_LSTM(X_train_LSTM, y_train, X_test_LSTM, y_test, batch_size, epochs)
 prediction6 = model6.predict(X_test_LSTM)
+end_time6 = time.clock()
+stacked_LSTM_performance = end_time6 - start_time6 
 prediction6_re = np.argmax(prediction6, axis=1)
 stacked_LSTM_precision = deep_learning_models.getAccuracy(prediction6, y_test)
 print("Precision for stacked LSTM")
@@ -136,6 +169,7 @@ print(stacked_LSTM_precision)
 #deep_learning_models.plotTrainingLoss(hist6)
 
 print("Model accuracy")
+plt.plot(hist0.history['acc'], marker = 'v', label = 'Bidirectional LSTM', markersize=10)
 plt.plot(hist1.history['acc'], marker = 'o', label='Basic LSTM', markersize=10)
 plt.plot(hist2.history['acc'], marker = ',', label = 'LSTM with dropout', markersize=10)
 plt.plot(hist3.history['acc'], marker = 's', label = 'CNN_LSTM', markersize=10)
@@ -150,6 +184,7 @@ plt.savefig("Model_accuracy.png")
 plt.show()
 
 print("Model loss")
+plt.plot(hist0.history['loss'], marker = 'v', label='Bidirectional LSTM', markersize=10)
 plt.plot(hist1.history['loss'], marker = 'o', label='Basic LSTM', markersize=10)
 plt.plot(hist2.history['loss'], marker = ',', label = 'LSTM with dropout', markersize=10)
 plt.plot(hist3.history['loss'], marker = 's', label = 'CNN_LSTM', markersize=10)
@@ -164,6 +199,9 @@ plt.savefig("Model_loss.png")
 plt.show()
 
 print("ROC")
+fprUni0, tprUni0, _ = roc_curve(prediction0_re, y_test_re)
+roc_aucUni0 = auc(fprUni0, tprUni0)
+
 fprUni1, tprUni1, _ = roc_curve(prediction1_re, y_test_re)
 roc_aucUni1 = auc(fprUni1, tprUni1)
 
@@ -184,6 +222,8 @@ roc_aucUni6 = auc(fprUni6, tprUni6)
 
 plt.figure()
 lw = 2
+plt.plot(fprUni0, tprUni0, marker = 'v', markersize=5, linestyle=':',
+         lw=lw, label='Bidirectional LSTM (AUC = %0.2f)' % roc_aucUni1)
 plt.plot(fprUni1, tprUni1, marker = 'o', markersize=5, linestyle='--',
          lw=lw, label='Basic LSTM (AUC = %0.2f)' % roc_aucUni1)
 plt.plot(fprUni2, tprUni2, marker = ',', markersize=5, linestyle='-.',
@@ -204,3 +244,4 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver operating characteristic')
 plt.legend(loc="lower right")
 plt.show()
+"""
