@@ -459,10 +459,4 @@ for body in bodies:
 
     text_statistics_features[title] = text_statistics_feature
     style_features[title] = style_feature
-    readability_features[title] = readability_feature
-    
-    
-    
-
-    
-    
+    readability_features[title] = readability_feature    

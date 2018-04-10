@@ -5,7 +5,7 @@ Created on Tue Jan 30 10:16:53 2018
 
 @author: lixiaodan
 """
-E 
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
