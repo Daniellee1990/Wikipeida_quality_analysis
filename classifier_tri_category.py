@@ -16,6 +16,12 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import confusion_matrix
 
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+import plot_precision_recall
+
 wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_with_all_features.csv')
 #wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_without_network.csv')
 #wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_without_hist_net.csv')
@@ -69,6 +75,7 @@ Fs = list()
 TNRs = list()
 recalls = list()
 transformed_y = deep_learning_models.transformResult(y_test)
+transformed_y_train = deep_learning_models.transformResult(y_train) ### one dimention list
 
 ### Bidirectional LSTM 
 #start_time0 = time.clock()
@@ -98,6 +105,8 @@ deep_learning_models.plot_confusion_matrix(cnf_matrix_0, classes=class_names, no
                       title='Confusion matrix for bidirectional LSTM accuracy')
 plt.show()
 
+plot_precision_recall.plot_average_precision(y_test, prediction0)
+
 #start_time1 = time.clock()
 model1, hist1 = deep_learning_models.basic_LSTM(X_train_LSTM, y_train, X_test_LSTM, y_test, batch_size, epochs)
 prediction1 = model1.predict(X_test_LSTM)
@@ -124,6 +133,8 @@ plt.figure()
 deep_learning_models.plot_confusion_matrix(cnf_matrix_1, classes=class_names, normalize=True,
                       title='Confusion matrix for basic LSTM accuracy')
 plt.show()
+
+plot_precision_recall.plot_average_precision(y_test, prediction1)
 
 ## stacked LSTM with dropout
 #start_time2 = time.clock()
@@ -152,6 +163,8 @@ deep_learning_models.plot_confusion_matrix(cnf_matrix_2, classes=class_names, no
                       title='Confusion matrix for LSTM with dropout accuracy')
 plt.show()
 
+plot_precision_recall.plot_average_precision(y_test, prediction2)
+
 ## CNN LSTM
 #start_time3 = time.clock()
 model3, hist3 = deep_learning_models.CNN_LSTM(X_train_CNN, y_train, y_test, batch_size, epochs, dropoutRate)
@@ -178,6 +191,7 @@ plt.figure()
 deep_learning_models.plot_confusion_matrix(cnf_matrix_3, classes=class_names, normalize=True,
                       title='Confusion matrix for CNN LSTM accuracy')
 plt.show()
+plot_precision_recall.plot_average_precision(y_test, prediction3)
 
 ## CNN
 #start_time4 = time.clock()
@@ -205,6 +219,7 @@ plt.figure()
 deep_learning_models.plot_confusion_matrix(cnf_matrix_4, classes=class_names, normalize=True,
                       title='Confusion matrix for CNN accuracy')
 plt.show()
+plot_precision_recall.plot_average_precision(y_test, prediction4)
 
 ## DNN
 model5, hist5 = deep_learning_models.DNN(X_train, y_train, batch_size, epochs, dropoutRate)
@@ -229,6 +244,7 @@ plt.figure()
 deep_learning_models.plot_confusion_matrix(cnf_matrix_5, classes=class_names, normalize=True,
                       title='Confusion matrix for DNN accuracy')
 plt.show()
+plot_precision_recall.plot_average_precision(y_test, prediction5)
 
 ## stacked LSTM
 #start_time6 = time.clock()
@@ -256,33 +272,103 @@ plt.figure()
 deep_learning_models.plot_confusion_matrix(cnf_matrix_6, classes=class_names, normalize=True,
                       title='Confusion matrix for stacked LSTM accuracy')
 plt.show()
+plot_precision_recall.plot_average_precision(y_test, prediction6)
 
-print("Model accuracy")
-plt.plot(hist0.history['acc'], marker = 'v', label = 'Bidirectional LSTM', markersize=10)
-plt.plot(hist1.history['acc'], marker = 'o', label='Basic LSTM', markersize=10)
-plt.plot(hist2.history['acc'], marker = ',', label = 'LSTM with dropout', markersize=10)
-plt.plot(hist3.history['acc'], marker = 's', label = 'CNN_LSTM', markersize=10)
-plt.plot(hist4.history['acc'], marker = '*', label = 'CNN', markersize=10)
-plt.plot(hist5.history['acc'], marker = '<', label = 'DNN', markersize=10)
-plt.plot(hist6.history['acc'], marker = '.', label = 'Stacked LSTM', markersize=10)
-plt.title('Model training accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(shadow=False, fontsize='small', loc='lower right')
-plt.savefig("Model_accuracy.png")
+###### Traditional machine learning algorithm #############
+### Decision tree ##### predict_proba
+dtree_model = DecisionTreeClassifier(max_depth = 2).fit(X_train, transformed_y_train)
+dtree_predictions = dtree_model.predict(X_test)
+transformed_pre7 = dtree_predictions
+# creating a confusion matrix
+cm_dt = confusion_matrix(transformed_y, transformed_pre7)
+dt_accuracy, dt_precision, dt_recall, dt_F1, dt_fbeta = deep_learning_models.getAccuracyMulti(transformed_pre7, transformed_y)
+accuracy_pair = list()
+accuracy_pair.append("Decision tree")
+accuracy_pair.append(dt_accuracy)
+accuracies.append(accuracy_pair)
+print("precision for decision tree")
+print(dt_accuracy)
+print(dt_precision)
+print(dt_recall)
+print(dt_fbeta)
+print(dt_F1)
+plt.figure()
+deep_learning_models.plot_confusion_matrix(cm_dt, classes=class_names, normalize=True,
+                      title='Confusion matrix for decision tree')
+plt.show()
+y_score_dt = dtree_model.predict_proba(X_test)
+plot_precision_recall.plot_average_precision(y_test, y_score_dt)
+
+### svm ### decision function
+svm_model_linear = SVC(kernel = 'linear', C = 1).fit(X_train, transformed_y_train)
+svm_predictions = svm_model_linear.predict(X_test)
+transformed_pre8 = svm_predictions
+# creating a confusion matrix
+cm_svm = confusion_matrix(transformed_y, transformed_pre8)
+svm_accuracy, svm_precision, svm_recall, svm_F1, svm_fbeta = deep_learning_models.getAccuracyMulti(transformed_pre8, transformed_y)
+accuracy_pair = list()
+accuracy_pair.append("Support vector machine")
+accuracy_pair.append(svm_accuracy)
+accuracies.append(accuracy_pair)
+print("precision for SVM")
+print(svm_accuracy)
+print(svm_precision)
+print(svm_recall)
+print(svm_fbeta)
+print(svm_F1)
+plt.figure()
+deep_learning_models.plot_confusion_matrix(cm_svm, classes=class_names, normalize=True,
+                      title='Confusion matrix for SVM')
+plt.show()
+y_score_svm = svm_model_linear.decision_function(X_test)
+plot_precision_recall.plot_average_precision(y_test, y_score_svm)
+
+### KNN ###
+knn = KNeighborsClassifier(n_neighbors = 7).fit(X_train, transformed_y_train) 
+# creating a confusion matrix
+knn_predictions = knn.predict(X_test) 
+transformed_pre9 = knn_predictions
+cm_knn = confusion_matrix(transformed_y, transformed_pre9)
+knn_accuracy, knn_precision, knn_recall, knn_F1, knn_fbeta = deep_learning_models.getAccuracyMulti(transformed_pre9, transformed_y) 
+accuracy_pair = list()
+accuracy_pair.append("KNN")
+accuracy_pair.append(knn_accuracy)
+accuracies.append(accuracy_pair)
+print("precision for KNN")
+print(knn_accuracy)
+print(knn_precision)
+print(knn_recall)
+print(knn_fbeta)
+print(knn_F1)
+plt.figure()
+deep_learning_models.plot_confusion_matrix(cm_knn, classes=class_names, normalize=True,
+                      title='Confusion matrix for KNN')
 plt.show()
 
-print("Model loss")
-plt.plot(hist0.history['loss'], marker = 'v', label='Bidirectional LSTM', markersize=10)
-plt.plot(hist1.history['loss'], marker = 'o', label='Basic LSTM', markersize=10)
-plt.plot(hist2.history['loss'], marker = ',', label = 'LSTM with dropout', markersize=10)
-plt.plot(hist3.history['loss'], marker = 's', label = 'CNN_LSTM', markersize=10)
-plt.plot(hist4.history['loss'], marker = '*', label = 'CNN', markersize=10)
-plt.plot(hist5.history['loss'], marker = '<', label = 'DNN', markersize=10)
-plt.plot(hist6.history['loss'], marker = '.', label = 'Stacked LSTM', markersize=10)
-plt.title('Model training loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(shadow=False, fontsize='small', loc='upper right')
-plt.savefig("Model_loss.png")
+y_score_knn = knn.predict_proba(X_test)
+plot_precision_recall.plot_average_precision(y_test, y_score_knn)
+
+
+# training a Naive Bayes classifier
+gnb = GaussianNB().fit(X_train, transformed_y_train)
+gnb_predictions = gnb.predict(X_test)
+transformed_pre10 = gnb_predictions
+# creating a confusion matrix
+gnb_cm = confusion_matrix(transformed_y, transformed_pre10)
+gnb_accuracy, gnb_precision, gnb_recall, gnb_F1, gnb_fbeta = deep_learning_models.getAccuracyMulti(transformed_pre10, transformed_y) 
+accuracy_pair = list()
+accuracy_pair.append("Naive Bayes")
+accuracy_pair.append (gnb_accuracy)
+accuracies.append(accuracy_pair)
+print("precision for Naive Bayes")
+print(gnb_accuracy)
+print(gnb_precision)
+print(gnb_recall)
+print(gnb_fbeta)
+print(gnb_F1)
+plt.figure()
+deep_learning_models.plot_confusion_matrix(gnb_cm, classes=class_names, normalize=True,
+                      title='Confusion matrix for Naive Bayes')
 plt.show()
+y_score_nb = gnb.predict_proba(X_test)
+plot_precision_recall.plot_average_precision(y_test, y_score_nb)
