@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Apr 19 20:39:39 2018
-
-@author: lixiaodan
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
 Created on Sat Jan 27 10:22:28 2018
 
 @author: lixiaodan
