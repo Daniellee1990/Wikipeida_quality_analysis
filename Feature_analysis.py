@@ -111,8 +111,4 @@ for i in range(len(feature_names)):
     print("Precision for stacked LSTM")
     print(cur_feature_name)
     print(stacked_LSTM_precision)
-    features_analysis_result[cur_feature_name] = stacked_LSTM_precision
-    
-    
-    
-     
+    features_analysis_result[cur_feature_name] = stacked_LSTM_precision   

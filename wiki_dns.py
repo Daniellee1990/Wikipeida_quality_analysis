@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 import time
 
-wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_with_all_features.csv')
+wikidata = pd.read_csv('/Users/lixiaodan/Desktop/research/result_3rd_paper/wikipedia_project/dataset/wikipedia_with_all_features.csv')
 #wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_without_network.csv')
 #wikidata = pd.read_csv('/Users/lixiaodan/Desktop/wikipedia_project/dataset/wikipedia_without_hist_net.csv')
 colnames = list(wikidata)
@@ -234,7 +234,7 @@ accuracies.append(accuracy_pair)
 #deep_learning_models.plotRoc(prediction6_re, y_test_re)
 #deep_learning_models.plotTrainingAccuracy(hist6)
 #deep_learning_models.plotTrainingLoss(hist6)
-
+"""
 print("Model accuracy")
 plt.plot(hist0.history['acc'], marker = 'v', label = 'Bidirectional LSTM', markersize=10)
 plt.plot(hist1.history['acc'], marker = 'o', label='Basic LSTM', markersize=10)
@@ -247,7 +247,7 @@ plt.title('Model training accuracy')
 plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
 plt.legend(shadow=False, fontsize='small', loc='lower right')
-plt.savefig("Model_accuracy.png")
+plt.savefig("Model_accuracy.png", dpi=600)
 plt.show()
 
 print("Model loss")
@@ -262,8 +262,9 @@ plt.title('Model training loss')
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend(shadow=False, fontsize='small', loc='upper right')
-plt.savefig("Model_loss.png")
+plt.savefig("Model_loss.png", dpi=600)
 plt.show()
+"""
 
 print("ROC")
 fprUni0, tprUni0, _ = roc_curve(prediction0_re, y_test_re)
@@ -310,6 +311,7 @@ plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('Receiver operating characteristic')
 plt.legend(loc="lower right")
+plt.savefig('Mean_roc.png', dpi=600)
 plt.show()
 print("Accuracies")
 print(accuracies)

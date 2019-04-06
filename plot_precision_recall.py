@@ -179,7 +179,7 @@ from sklearn.neighbors import KNeighborsClassifier
 # ....................................................
 from sklearn.metrics import average_precision_score
 
-def plot_average_precision(Y_test, y_score):
+def plot_average_precision(Y_test, y_score, figname):
     n_classes = Y_test.shape[1]
     # For each class
     precision = dict()
@@ -213,10 +213,9 @@ def plot_average_precision(Y_test, y_score):
     plt.ylabel('Precision')
     plt.ylim([0.0, 1.05])
     plt.xlim([0.0, 1.0])
-    plt.title(
-        'Average precision score, micro-averaged over all classes: AP={0:0.2f}'
-        .format(average_precision["micro"]))
-    
+    plt.title('Average precision score, micro-averaged over all classes: AP={0:0.2f}'
+              .format(average_precision["micro"]))
+    plt.savefig(figname + ' Average precision score, micro-averaged over all classes.png', dpi=300)
     ###############################################################################
     # Plot Precision-Recall curve for each class and iso-f1 curves
     # .............................................................
@@ -254,9 +253,9 @@ def plot_average_precision(Y_test, y_score):
     plt.ylim([0.0, 1.05])
     plt.xlabel('Recall')
     plt.ylabel('Precision')
-    plt.title('Extension of Precision-Recall curve to multi-class')
+    plt.title('Precision-Recall curve' + figname)
     plt.legend(lines, labels, loc=(0, -.38), prop=dict(size=14))
-    
+    plt.savefig(figname + ' Extension of Precision-Recall curve to multi-class.png', dpi=300)
     plt.show()
 
 
